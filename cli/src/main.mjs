@@ -254,6 +254,14 @@ screen.key(['4'], () => showPage(3));
 screen.key(['5'], () => showPage(4));
 screen.key(['tab'], () => showPage((currentPage + 1) % PAGE_NAMES.length));
 
+// ── Resize handling ──────────────────────────────────────
+screen.on('resize', () => {
+  for (const w of Object.values(W)) {
+    if (w && typeof w.emit === 'function') w.emit('attach');
+  }
+  screen.render();
+});
+
 // ── Auto-refresh every 2 min ────────────────────────────
 setInterval(() => loadPageData(), 120_000);
 
