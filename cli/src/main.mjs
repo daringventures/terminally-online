@@ -29,6 +29,9 @@ import { fetch_pypi } from './services/pypi.mjs';
 import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
 import { computeClownIndex, computeDoomIndex, computeMainCharIndex, computeTechPanicIndex } from './services/custom-indices.mjs';
 import { cachedFetch, cacheStats } from './cache.mjs';
+import { getTagline, rotateTagline, getBootMessages, getScanFrame, getGlitchText, getSignalBar, generateAlerts, getTimeString, getUptimeString } from './vibes.mjs';
+
+const START_TIME = Date.now();
 
 // Wrap fetch fn with local SQLite cache. Stale data served instantly, refresh in background.
 function cf(key, fn, ttl = 120) {
@@ -249,10 +252,29 @@ const headerBox = blessed.box({
   top: 0, left: 0, width: '100%', height: 3,
   tags: true,
   style: { fg: 'cyan', bg: 'black' },
-  content: `{center}{bold}{yellow-fg}▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄{/}
-{yellow-fg}█{/} ${I.bolt}{cyan-fg}TERMINALLY ONLINE{/} {gray-fg}━━{/} {green-fg}see everything. touch nothing. profit maybe.{/} {gray-fg}━━{/} {red-fg}${I.fire}LIVE{/} {yellow-fg}█{/}
-{yellow-fg}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{/}{/center}`,
 });
+
+function updateHeader() {
+  const time = getTimeString();
+  const uptime = getUptimeString(START_TIME);
+  const scan = getScanFrame();
+  const tagline = getTagline();
+  const signal = getSignalBar();
+  const stats = cacheStats();
+  headerBox.setContent(
+    `{yellow-fg}${scan}{/} {bold}{cyan-fg}TERMINALLY ONLINE{/bold}{/} {gray-fg}━{/} {green-fg}${tagline}{/} {gray-fg}━{/} {red-fg}${I.fire}LIVE{/} {gray-fg}${scan}{/}\n` +
+    `{gray-fg}${I.clock}{/}{white-fg}${time}{/} {gray-fg}│{/} {gray-fg}UP:{/}{cyan-fg}${uptime}{/} {gray-fg}│{/} {gray-fg}SIG:{/}{green-fg}${signal}{/} {gray-fg}│{/} {gray-fg}CACHE:{/}{cyan-fg}${stats.keys}{/} {gray-fg}│{/} {gray-fg}FEEDS:{/}{yellow-fg}24{/} {gray-fg}│{/} {gray-fg}IDX:{/}{magenta-fg}6{/}`
+  );
+}
+
+// Live clock — tick every second
+setInterval(() => {
+  updateHeader();
+  screen.render();
+}, 1000);
+
+// Rotate tagline every 15 seconds
+setInterval(() => rotateTagline(), 15_000);
 
 // ── Page builders ───────────────────────────────────────
 function clearScreen() {
@@ -539,5 +561,35 @@ screen.key(['S-tab'], () => showPage((currentPage - 1 + PAGE_NAMES.length) % PAG
 // ── Auto-refresh ────────────────────────────────────────
 setInterval(() => loadPageData(), 120_000);
 
-// ── Boot ────────────────────────────────────────────────
-showPage(0);
+// ── Boot sequence ───────────────────────────────────────
+async function bootSequence() {
+  const bootScreen = blessed.box({
+    top: 'center', left: 'center',
+    width: '80%', height: '80%',
+    tags: true,
+    style: { fg: 'green', bg: 'black', border: { fg: 'yellow' } },
+    border: { type: 'line' },
+    label: ' {yellow-fg}SYSTEM BOOT{/} ',
+  });
+  screen.append(bootScreen);
+
+  const msgs = getBootMessages(12);
+  let content = '\n{bold}{cyan-fg}  ████████╗ ██████╗\n  ╚══██╔══╝██╔═══██╗\n     ██║   ██║   ██║\n     ██║   ██║   ██║\n     ██║   ╚██████╔╝\n     ╚═╝    ╚═════╝{/bold}{/}\n\n';
+
+  for (const msg of msgs) {
+    content += `  ${msg}\n`;
+    bootScreen.setContent(content);
+    screen.render();
+    await new Promise(r => setTimeout(r, 120 + Math.random() * 180));
+  }
+
+  content += `\n  {bold}{yellow-fg}> TERMINAL IS LIVE. STAY FROSTY.{/bold}{/}\n`;
+  bootScreen.setContent(content);
+  screen.render();
+  await new Promise(r => setTimeout(r, 800));
+
+  bootScreen.detach();
+  showPage(0);
+}
+
+bootSequence();
