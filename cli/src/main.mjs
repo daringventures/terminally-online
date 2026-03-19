@@ -26,6 +26,7 @@ import { fetch_ooni } from './services/ooni.mjs';
 import { fetch_s2_papers } from './services/semantic-scholar.mjs';
 import { fetch_producthunt } from './services/producthunt.mjs';
 import { fetch_pypi } from './services/pypi.mjs';
+import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
 
 // ── Nerd Font Icons ─────────────────────────────────────
 const I = {
@@ -261,9 +262,9 @@ function buildMain() {
 
   W.poly = tbl(4, 0, 4, 4, `${I.chart}BETTING ON REALITY`, [3, 38, 5, 8]);
   W.manifold = tbl(4, 4, 4, 4, `${I.brain}NERD BETS`, [3, 38, 5, 8]);
-  W.fg = gaugeWidget(4, 8, 2, 2, `${I.fire}VIBES CHECK`);
+  W.vibes = gaugeWidget(4, 8, 2, 2, `${I.fire}SO COOKED / SO BACK`);
+  W.degen = gaugeWidget(6, 8, 2, 2, `${I.bolt}DEGEN INDEX`);
   W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WHO DIED?`, [3, 24, 7]);
-  W.quakes = tbl(6, 8, 2, 2, `${I.quake}GROUND SHAKING`, [4, 22, 3, 4]);
 
   W.lobsters = tbl(8, 0, 4, 4, `${I.trophy}CRUSTACEAN NEWS`, [3, 40, 4, 6, 3]);
   W.ph = tbl(8, 4, 4, 4, `${I.rocket}SHIPS THAT SINK`, [3, 48]);
@@ -342,37 +343,44 @@ async function loadPageData() {
   const p = currentPage;
 
   if (p === 0) {
-    const [hn, rd, tr, po, ma, fg, wk, eq, lo, ph, co] = await Promise.allSettled([
+    const [hn, rd, tr, po, ma, wk, lo, ph, co, vibes, degen] = await Promise.allSettled([
       safe(() => fetch_hn(25)),
       safe(() => fetch_reddit('wallstreetbets', 20)),
       safe(fetch_google_trends),
       safe(() => fetch_polymarket(15)),
       safe(() => fetch_manifold(15)),
-      safe(fetch_fear_greed),
       safe(fetch_wiki_top),
-      safe(fetch_earthquakes),
       safe(() => fetch_lobsters(20)),
       safe(() => fetch_producthunt(15)),
       safe(() => fetch_congress(15)),
+      safe(computeVibesIndex),
+      safe(computeDegenIndex),
     ]);
     set(W.hn, hn.value); set(W.reddit, rd.value); set(W.trends, tr.value);
     set(W.poly, po.value); set(W.manifold, ma.value);
-    set(W.wiki, wk.value); set(W.quakes, eq.value);
+    set(W.wiki, wk.value);
     set(W.lobsters, lo.value); set(W.ph, ph.value); set(W.congress, co.value);
-    if (fg.value?.value != null) {
-      const v = fg.value.value;
-      W.fg?.setPercent(v);
-      const color = v <= 25 ? 'red' : v <= 45 ? C.orange : v <= 55 ? C.amber : v <= 75 ? 'green' : C.cyan;
-      W.fg?.setLabel(` ${I.fire}F&G: ${v} — ${fg.value.label} `);
+    // Vibes index gauge
+    if (vibes.value?.index != null) {
+      const v = vibes.value;
+      W.vibes?.setPercent(v.index);
+      W.vibes?.setLabel(` ${I.fire}${v.label}: ${v.index}/100 `);
+    }
+    // Degen index gauge
+    if (degen.value?.index != null) {
+      const d = degen.value;
+      W.degen?.setPercent(d.index);
+      W.degen?.setLabel(` ${I.bolt}${d.label}: ${d.index}/100 `);
     }
     // Update ticker with live data
     const tickerItems = [];
-    if (fg.value) tickerItems.push(`${I.fire}F&G: ${fg.value.value} ${fg.value.label}`);
-    if (eq.value?.length) tickerItems.push(`${I.quake}QUAKES: ${eq.value.length} events M4.5+`);
+    if (vibes.value) tickerItems.push(`${I.fire}VIBES: ${vibes.value.index}/100 ${vibes.value.label}`);
+    if (degen.value) tickerItems.push(`${I.bolt}DEGEN: ${degen.value.index}/100 ${degen.value.label}`);
+    if (vibes.value?.breakdown) vibes.value.breakdown.forEach(b => tickerItems.push(b));
     if (hn.value?.[0]) tickerItems.push(`${I.hn}HN #1: ${hn.value[0][1]}`);
     if (tr.value?.[0]) tickerItems.push(`${I.search}TRENDING: ${tr.value[0][1]}`);
     if (po.value?.[0]) tickerItems.push(`${I.chart}POLY: ${po.value[0][1]} ${po.value[0][2]}`);
-    if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI #1: ${wk.value[0][1]} (${wk.value[0][2]})`);
+    if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI: ${wk.value[0][1]} (${wk.value[0][2]})`);
     setTicker(tickerItems);
   }
   else if (p === 1) {
