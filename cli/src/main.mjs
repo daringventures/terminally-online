@@ -27,19 +27,78 @@ import { fetch_s2_papers } from './services/semantic-scholar.mjs';
 import { fetch_producthunt } from './services/producthunt.mjs';
 import { fetch_pypi } from './services/pypi.mjs';
 
+// ── Nerd Font Icons ─────────────────────────────────────
+const I = {
+  hn:      '󰊤 ',   // hacker news
+  reddit:  '󰑍 ',   // reddit
+  coin:    '󰆚 ',   // coin
+  chart:   '󰄪 ',   // chart
+  fire:    ' ',   // fire
+  globe:   '󰖟 ',   // globe
+  git:     ' ',   // git
+  brain:   '󰧑 ',   // brain
+  pkg:     '󰏗 ',   // package
+  quake:   '󱐋 ',   // earthquake
+  lock:    '󰌾 ',   // lock
+  gov:     '󰛓 ',   // government
+  search:  ' ',   // search
+  wiki:    '󰖬 ',   // wikipedia
+  cert:    '󰄤 ',   // certificate
+  money:   '󰄴 ',   // money
+  clock:   '󰥔 ',   // clock
+  rocket:  '󰑣 ',   // rocket
+  eye:     '󰈈 ',   // eye
+  bolt:    '󱐌 ',   // bolt
+  skull:   '󰚌 ',   // skull
+  trophy:  '󰆥 ',   // trophy
+  up:      '',   // up arrow
+  down:    '',   // down arrow
+  dot:     '',   // dot
+  bar:     '█',
+  barh:    '▓',
+  barm:    '▒',
+  barl:    '░',
+};
+
+// ── Bloomberg-style color palette ───────────────────────
+const C = {
+  orange: '#ff8c00',
+  amber: '#ffbf00',
+  green: '#00ff88',
+  red: '#ff4444',
+  cyan: '#00dfff',
+  blue: '#4488ff',
+  purple: '#bb88ff',
+  white: '#e0e0e0',
+  dim: '#555555',
+  bg: '#0a0a0a',
+  panelBg: '#111111',
+  border: '#333333',
+  header: '#00dfff',
+};
+
 // ── Screen ──────────────────────────────────────────────
 const screen = blessed.screen({
   smartCSR: true,
-  title: 'terminally online',
+  title: 'TERMINALLY ONLINE',
   fullUnicode: true,
+  forceUnicode: true,
+  terminal: 'xterm-256color',
+  dockBorders: true,
 });
 
-const PAGE_NAMES = ['MAIN', 'MARKETS', 'DEV', 'WEIRD', 'INTEL'];
+const PAGE_NAMES = [
+  `${I.globe}MAIN`,
+  `${I.coin}DEGEN`,
+  `${I.git}NERD`,
+  `${I.skull}CURSED`,
+  `${I.eye}GLOWIE`,
+];
 let currentPage = 0;
 let grid = null;
-const W = {}; // current widgets
+const W = {};
 
-// ── Helpers ─────────────────────────────────────────────
+// ── Widget factories ────────────────────────────────────
 function tbl(row, col, rowSpan, colSpan, label, widths) {
   return grid.set(row, col, rowSpan, colSpan, contrib.table, {
     label: ` ${label} `,
@@ -48,101 +107,208 @@ function tbl(row, col, rowSpan, colSpan, label, widths) {
     columnSpacing: 1,
     columnWidth: widths || [4, 50, 10, 10, 6],
     style: {
-      header: { fg: 'cyan', bold: true },
-      cell: { fg: 'white' },
-      border: { fg: 'gray' },
-      label: { fg: 'cyan', bold: true },
+      header: { fg: C.cyan, bold: true },
+      cell: { fg: C.white },
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
     },
-    border: { type: 'line' },
+    border: { type: 'line', fg: C.border },
   });
 }
 
-function gauge(row, col, rowSpan, colSpan, label) {
-  return grid.set(row, col, rowSpan, colSpan, contrib.gauge, {
+function logWidget(row, col, rowSpan, colSpan, label) {
+  return grid.set(row, col, rowSpan, colSpan, contrib.log, {
     label: ` ${label} `,
-    stroke: 'cyan',
-    fill: 'white',
-    style: { border: { fg: 'gray' }, label: { fg: 'cyan', bold: true } },
-    border: { type: 'line' },
+    style: {
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
+      text: { fg: C.green },
+    },
+    border: { type: 'line', fg: C.border },
+    bufferLength: 80,
+    tags: true,
   });
 }
+
+function gaugeWidget(row, col, rowSpan, colSpan, label) {
+  return grid.set(row, col, rowSpan, colSpan, contrib.gauge, {
+    label: ` ${label} `,
+    stroke: C.amber,
+    fill: C.dim,
+    style: {
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
+    },
+    border: { type: 'line', fg: C.border },
+  });
+}
+
+function sparkline(row, col, rowSpan, colSpan, label) {
+  return grid.set(row, col, rowSpan, colSpan, contrib.sparkline, {
+    label: ` ${label} `,
+    tags: true,
+    style: {
+      fg: C.cyan,
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
+    },
+    border: { type: 'line', fg: C.border },
+  });
+}
+
+function lcdWidget(row, col, rowSpan, colSpan, label) {
+  return grid.set(row, col, rowSpan, colSpan, contrib.lcd, {
+    label: ` ${label} `,
+    segmentWidth: 0.06,
+    segmentInterval: 0.11,
+    strokeWidth: 0.11,
+    elements: 4,
+    display: '----',
+    elementSpacing: 4,
+    elementPadding: 2,
+    color: C.amber,
+    style: {
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
+    },
+    border: { type: 'line', fg: C.border },
+  });
+}
+
+function donutWidget(row, col, rowSpan, colSpan, label) {
+  return grid.set(row, col, rowSpan, colSpan, contrib.donut, {
+    label: ` ${label} `,
+    radius: 14,
+    arcWidth: 4,
+    yPadding: 2,
+    remainColor: C.dim,
+    style: {
+      border: { fg: C.border },
+      label: { fg: C.amber, bold: true },
+    },
+    border: { type: 'line', fg: C.border },
+  });
+}
+
+// ── Ticker bar at bottom ────────────────────────────────
+const tickerBar = blessed.box({
+  bottom: 1, left: 0, width: '100%', height: 1,
+  tags: true,
+  style: { fg: C.amber, bg: '#1a1a00' },
+});
+
+let tickerText = '';
+let tickerOffset = 0;
+
+function setTicker(items) {
+  tickerText = items.map(t => `  ${I.dot} ${t}  `).join('');
+  tickerOffset = 0;
+}
+
+function animateTicker() {
+  if (!tickerText) return;
+  const w = screen.width || 120;
+  const padded = tickerText + '    ' + tickerText;
+  const slice = padded.slice(tickerOffset % padded.length, (tickerOffset % padded.length) + w);
+  tickerBar.setContent(slice);
+  tickerOffset++;
+}
+
+setInterval(animateTicker, 150);
 
 // ── Status bar ──────────────────────────────────────────
 const statusBar = blessed.box({
   bottom: 0, left: 0, width: '100%', height: 1,
   tags: true,
-  style: { fg: 'white', bg: 'black' },
+  style: { fg: C.white, bg: '#0d0d0d' },
 });
 
 function updateStatus(msg) {
   const tabs = PAGE_NAMES.map((n, i) =>
-    i === currentPage ? `{cyan-fg}{bold}${n}{/bold}{/}` : `{gray-fg}${n}{/}`
-  ).join(' ');
-  statusBar.setContent(` ${tabs}  {gray-fg}|{/}  ${msg}  {gray-fg}|{/}  {cyan-fg}[1-5]{/} pages  {cyan-fg}[r]{/} refresh  {cyan-fg}[q]{/} quit`);
+    i === currentPage
+      ? `{${C.amber}-fg}{bold} ${n} {/bold}{/}`
+      : `{${C.dim}-fg} ${n} {/}`
+  ).join('{gray-fg}│{/}');
+  statusBar.setContent(
+    ` ${tabs} {${C.dim}-fg}│{/} ${msg} {${C.dim}-fg}│{/} {${C.cyan}-fg}[1-5]{/} pages {${C.cyan}-fg}[r]{/} refresh {${C.cyan}-fg}[q]{/} quit`
+  );
   screen.render();
 }
 
+// ── Header ──────────────────────────────────────────────
+const headerBox = blessed.box({
+  top: 0, left: 0, width: '100%', height: 3,
+  tags: true,
+  style: { fg: C.cyan, bg: '#0a0a0a' },
+  content: `{center}{bold}{${C.amber}-fg}▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄{/}
+{${C.amber}-fg}█{/} ${I.bolt}{${C.cyan}-fg}TERMINALLY ONLINE{/} {${C.dim}-fg}━━{/} {${C.green}-fg}see everything. touch nothing. profit maybe.{/} {${C.dim}-fg}━━{/} {${C.red}-fg}${I.fire}LIVE{/} {${C.amber}-fg}█{/}
+{${C.amber}-fg}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{/}{/center}`,
+});
+
 // ── Page builders ───────────────────────────────────────
 function clearScreen() {
-  // Remove everything except status bar
-  const toRemove = screen.children.filter(c => c !== statusBar);
-  toRemove.forEach(c => c.detach());
+  // Detach everything, we'll re-append what we need
+  while (screen.children.length) {
+    screen.children[0].detach();
+  }
 }
 
 function buildMain() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen });
-  W.hn = tbl(0, 0, 4, 4, 'Hacker News', [3, 48, 6, 5, 4]);
-  W.reddit = tbl(0, 4, 4, 4, 'r/wallstreetbets', [3, 44, 6, 7, 4]);
-  W.trends = tbl(0, 8, 4, 4, 'Google Trends', [3, 38, 12]);
-  W.poly = tbl(4, 0, 4, 4, 'Polymarket', [3, 42, 5, 8]);
-  W.manifold = tbl(4, 4, 4, 4, 'Manifold', [3, 42, 5, 8]);
-  W.fg = gauge(4, 8, 2, 2, 'Fear & Greed');
-  W.wiki = tbl(4, 10, 4, 2, 'Wiki Spikes', [3, 30, 7]);
-  W.quakes = tbl(6, 8, 2, 2, 'Earthquakes', [4, 25, 4, 5]);
-  W.lobsters = tbl(8, 0, 4, 4, 'Lobste.rs', [3, 44, 5, 7, 4]);
-  W.ph = tbl(8, 4, 4, 4, 'Product Hunt', [3, 50]);
-  W.congress = tbl(8, 8, 4, 4, 'Congress Bills', [10, 42, 8]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.hn = tbl(0, 0, 4, 4, `${I.hn}ORANGE SITE`, [3, 44, 5, 5, 3]);
+  W.reddit = tbl(0, 4, 4, 4, `${I.reddit}REGARDED FINANCE`, [3, 40, 6, 7, 3]);
+  W.trends = tbl(0, 8, 4, 4, `${I.search}NORMIE RADAR`, [3, 35, 12]);
+
+  W.poly = tbl(4, 0, 4, 4, `${I.chart}BETTING ON REALITY`, [3, 38, 5, 8]);
+  W.manifold = tbl(4, 4, 4, 4, `${I.brain}NERD BETS`, [3, 38, 5, 8]);
+  W.fg = gaugeWidget(4, 8, 2, 2, `${I.fire}VIBES CHECK`);
+  W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WHO DIED?`, [3, 24, 7]);
+  W.quakes = tbl(6, 8, 2, 2, `${I.quake}GROUND SHAKING`, [4, 22, 3, 4]);
+
+  W.lobsters = tbl(8, 0, 4, 4, `${I.trophy}CRUSTACEAN NEWS`, [3, 40, 4, 6, 3]);
+  W.ph = tbl(8, 4, 4, 4, `${I.rocket}SHIPS THAT SINK`, [3, 48]);
+  W.congress = tbl(8, 8, 4, 4, `${I.gov}YOUR TAX DOLLARS`, [8, 38, 7]);
 }
 
 function buildMarkets() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen });
-  W.dex = tbl(0, 0, 4, 6, 'DEX Boosted Tokens', [3, 38, 10, 8]);
-  W.coins = tbl(0, 6, 4, 6, 'Trending Coins', [3, 22, 8, 6, 8]);
-  W.poly2 = tbl(4, 0, 4, 6, 'Polymarket', [3, 46, 5, 8]);
-  W.manifold2 = tbl(4, 6, 4, 6, 'Manifold', [3, 46, 5, 8]);
-  W.insider = tbl(8, 0, 4, 6, 'SEC Insider Trades', [3, 40, 8, 10]);
-  W.breaches = tbl(8, 6, 4, 6, 'Data Breaches', [3, 30, 10, 10]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.dex = tbl(0, 0, 4, 6, `${I.bolt}PAID SHILLS (DEX BOOST)`, [3, 36, 8, 8]);
+  W.coins = tbl(0, 6, 4, 6, `${I.coin}CT IS WATCHING`, [3, 20, 8, 5, 8]);
+  W.poly2 = tbl(4, 0, 4, 6, `${I.chart}BETTING ON REALITY`, [3, 42, 5, 8]);
+  W.manifold2 = tbl(4, 6, 4, 6, `${I.brain}GALAXY BRAIN BETS`, [3, 42, 5, 8]);
+  W.insider = tbl(8, 0, 4, 6, `${I.money}CONGRESS BUYING CALLS`, [3, 38, 8, 10]);
+  W.breaches = tbl(8, 6, 4, 6, `${I.skull}YOUR PASSWORD LEAKED`, [3, 28, 10, 10]);
 }
 
 function buildDev() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen });
-  W.github = tbl(0, 0, 4, 6, 'GitHub Rising', [3, 36, 10, 8]);
-  W.arxiv = tbl(0, 6, 4, 6, 'arXiv AI', [3, 44, 22, 10]);
-  W.npm = tbl(4, 0, 4, 4, 'npm Downloads', [3, 22, 10]);
-  W.pypi = tbl(4, 4, 4, 4, 'PyPI Downloads', [3, 22, 10]);
-  W.s2 = tbl(4, 8, 4, 4, 'Semantic Scholar', [3, 40, 8, 5]);
-  W.hn2 = tbl(8, 0, 4, 6, 'Hacker News', [3, 48, 6, 5, 4]);
-  W.lobsters2 = tbl(8, 6, 4, 6, 'Lobste.rs', [3, 48, 5, 7, 4]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.github = tbl(0, 0, 4, 6, `${I.git}FRESH REPOS (7d)`, [3, 34, 8, 8]);
+  W.arxiv = tbl(0, 6, 4, 6, `${I.brain}PAPERS NO ONE READS`, [3, 40, 20, 10]);
+  W.npm = tbl(4, 0, 4, 4, `${I.pkg}NPM INSTALL REGRET`, [3, 20, 10]);
+  W.pypi = tbl(4, 4, 4, 4, `${I.pkg}PIP INSTALL COPE`, [3, 20, 10]);
+  W.s2 = tbl(4, 8, 4, 4, `${I.brain}CITATION FARMING`, [3, 36, 8, 5]);
+  W.hn2 = tbl(8, 0, 4, 6, `${I.hn}ORANGE SITE`, [3, 44, 5, 5, 3]);
+  W.lobsters2 = tbl(8, 6, 4, 6, `${I.trophy}CRUSTACEAN NEWS`, [3, 44, 4, 6, 3]);
 }
 
 function buildWeird() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen });
-  W.wiki2 = tbl(0, 0, 4, 6, 'Wikipedia Top Pages', [3, 40, 8]);
-  W.crtsh = tbl(0, 6, 4, 6, 'Cert Transparency (openai.com)', [40, 18, 10]);
-  W.usa = tbl(4, 0, 4, 6, 'Federal Contracts (30d)', [3, 28, 10, 22]);
-  W.wayback = tbl(4, 6, 4, 6, 'Wayback (openai.com)', [10, 36, 4]);
-  W.ooni = tbl(8, 0, 4, 6, 'OONI Censorship', [3, 40, 8, 10]);
-  W.quakes2 = tbl(8, 6, 4, 6, 'Earthquakes M4.5+', [4, 36, 4, 5]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.wiki2 = tbl(0, 0, 4, 6, `${I.wiki}WHAT NORMIES GOOGLED`, [3, 38, 8]);
+  W.crtsh = tbl(0, 6, 4, 6, `${I.cert}SSL STALKING (openai)`, [38, 16, 10]);
+  W.usa = tbl(4, 0, 4, 6, `${I.money}WHO'S EATING GOV MONEY`, [3, 26, 10, 20]);
+  W.wayback = tbl(4, 6, 4, 6, `${I.clock}RECEIPTS (openai.com)`, [10, 34, 4]);
+  W.ooni = tbl(8, 0, 4, 6, `${I.lock}WHO GOT CENSORED`, [3, 38, 8, 10]);
+  W.quakes2 = tbl(8, 6, 4, 6, `${I.quake}EARTH IS SHAKING`, [4, 34, 4, 5]);
 }
 
 function buildIntel() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen });
-  W.insider2 = tbl(0, 0, 4, 6, 'SEC Insider Trades', [3, 40, 8, 10]);
-  W.congress2 = tbl(0, 6, 4, 6, 'Congress Bills', [10, 42, 8]);
-  W.breaches2 = tbl(4, 0, 4, 6, 'Data Breaches', [3, 30, 10, 10]);
-  W.trends2 = tbl(4, 6, 4, 6, 'Google Trends US', [3, 38, 12]);
-  W.reddit2 = tbl(8, 0, 4, 6, 'r/technology', [3, 44, 6, 7, 4]);
-  W.reddit3 = tbl(8, 6, 4, 6, 'r/cryptocurrency', [3, 44, 6, 7, 4]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.insider2 = tbl(0, 0, 4, 6, `${I.money}PELOSI'S PORTFOLIO`, [3, 38, 8, 10]);
+  W.congress2 = tbl(0, 6, 4, 6, `${I.gov}LAWS THEY'RE COOKING`, [8, 40, 7]);
+  W.breaches2 = tbl(4, 0, 4, 6, `${I.skull}YOUR DATA (LEAKED)`, [3, 28, 10, 10]);
+  W.trends2 = tbl(4, 6, 4, 6, `${I.search}NORMIE RADAR`, [3, 35, 12]);
+  W.reddit2 = tbl(8, 0, 4, 6, `${I.reddit}r/TECHNOLOGY`, [3, 40, 6, 7, 3]);
+  W.reddit3 = tbl(8, 6, 4, 6, `${I.reddit}r/COPIUM`, [3, 40, 6, 7, 3]);
 }
 
 const builders = [buildMain, buildMarkets, buildDev, buildWeird, buildIntel];
@@ -151,9 +317,10 @@ const builders = [buildMain, buildMarkets, buildDev, buildWeird, buildIntel];
 function showPage(idx) {
   currentPage = idx;
   clearScreen();
-  // Clear widget refs
   for (const k of Object.keys(W)) delete W[k];
   builders[idx]();
+  screen.append(headerBox);
+  screen.append(tickerBar);
   screen.append(statusBar);
   screen.render();
   loadPageData();
@@ -162,7 +329,7 @@ function showPage(idx) {
 // ── Data loading ────────────────────────────────────────
 async function safe(fn) {
   try { return await fn(); }
-  catch (e) { return [[`err: ${(e.message || '').slice(0, 60)}`]]; }
+  catch (e) { return [[`{red-fg}ERR{/} ${(e.message || '').slice(0, 50)}`]]; }
 }
 
 function set(widget, data) {
@@ -171,7 +338,7 @@ function set(widget, data) {
 }
 
 async function loadPageData() {
-  updateStatus('fetching…');
+  updateStatus(`{${C.amber}-fg}${I.bolt}FETCHING…{/}`);
   const p = currentPage;
 
   if (p === 0) {
@@ -193,9 +360,20 @@ async function loadPageData() {
     set(W.wiki, wk.value); set(W.quakes, eq.value);
     set(W.lobsters, lo.value); set(W.ph, ph.value); set(W.congress, co.value);
     if (fg.value?.value != null) {
-      W.fg?.setPercent(fg.value.value);
-      W.fg?.setLabel(` Fear & Greed: ${fg.value.value} — ${fg.value.label} `);
+      const v = fg.value.value;
+      W.fg?.setPercent(v);
+      const color = v <= 25 ? 'red' : v <= 45 ? C.orange : v <= 55 ? C.amber : v <= 75 ? 'green' : C.cyan;
+      W.fg?.setLabel(` ${I.fire}F&G: ${v} — ${fg.value.label} `);
     }
+    // Update ticker with live data
+    const tickerItems = [];
+    if (fg.value) tickerItems.push(`${I.fire}F&G: ${fg.value.value} ${fg.value.label}`);
+    if (eq.value?.length) tickerItems.push(`${I.quake}QUAKES: ${eq.value.length} events M4.5+`);
+    if (hn.value?.[0]) tickerItems.push(`${I.hn}HN #1: ${hn.value[0][1]}`);
+    if (tr.value?.[0]) tickerItems.push(`${I.search}TRENDING: ${tr.value[0][1]}`);
+    if (po.value?.[0]) tickerItems.push(`${I.chart}POLY: ${po.value[0][1]} ${po.value[0][2]}`);
+    if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI #1: ${wk.value[0][1]} (${wk.value[0][2]})`);
+    setTicker(tickerItems);
   }
   else if (p === 1) {
     const [dx, co, po, ma, ins, br] = await Promise.allSettled([
@@ -206,6 +384,11 @@ async function loadPageData() {
     set(W.dex, dx.value); set(W.coins, co.value);
     set(W.poly2, po.value); set(W.manifold2, ma.value);
     set(W.insider, ins.value); set(W.breaches, br.value);
+    const tickerItems = [];
+    if (co.value?.[0]) tickerItems.push(`${I.coin}#1 COIN: ${co.value[0][1]} ${co.value[0][4]}`);
+    if (dx.value?.[0]) tickerItems.push(`${I.bolt}DEX BOOST: ${dx.value[0][1]}`);
+    if (ins.value?.[0]) tickerItems.push(`${I.money}INSIDER: ${ins.value[0][1]}`);
+    setTicker(tickerItems);
   }
   else if (p === 2) {
     const [gh, ax, nm, py, s2, hn, lo] = await Promise.allSettled([
@@ -217,6 +400,11 @@ async function loadPageData() {
     set(W.github, gh.value); set(W.arxiv, ax.value);
     set(W.npm, nm.value); set(W.pypi, py.value); set(W.s2, s2.value);
     set(W.hn2, hn.value); set(W.lobsters2, lo.value);
+    const tickerItems = [];
+    if (gh.value?.[0]) tickerItems.push(`${I.git}RISING: ${gh.value[0][1]} ${gh.value[0][3]}`);
+    if (ax.value?.[0]) tickerItems.push(`${I.brain}ARXIV: ${ax.value[0][1]}`);
+    if (nm.value?.[0]) tickerItems.push(`${I.pkg}NPM #1: ${nm.value[0][1]} ${nm.value[0][2]}`);
+    setTicker(tickerItems);
   }
   else if (p === 3) {
     const [wk, ct, us, wb, oo, eq] = await Promise.allSettled([
@@ -227,6 +415,11 @@ async function loadPageData() {
     set(W.wiki2, wk.value); set(W.crtsh, ct.value);
     set(W.usa, us.value); set(W.wayback, wb.value);
     set(W.ooni, oo.value); set(W.quakes2, eq.value);
+    const tickerItems = [];
+    if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI #1: ${wk.value[0][1]} ${wk.value[0][2]} views`);
+    if (oo.value?.[0]) tickerItems.push(`${I.lock}CENSORSHIP: ${oo.value[0][1]}`);
+    if (eq.value?.[0]) tickerItems.push(`${I.quake}QUAKE: M${eq.value[0][0]} ${eq.value[0][1]}`);
+    setTicker(tickerItems);
   }
   else if (p === 4) {
     const [ins, co, br, tr, r1, r2] = await Promise.allSettled([
@@ -238,11 +431,24 @@ async function loadPageData() {
     set(W.insider2, ins.value); set(W.congress2, co.value);
     set(W.breaches2, br.value); set(W.trends2, tr.value);
     set(W.reddit2, r1.value); set(W.reddit3, r2.value);
+    const tickerItems = [];
+    if (ins.value?.[0]) tickerItems.push(`${I.money}INSIDER: ${ins.value[0][1]}`);
+    if (co.value?.[0]) tickerItems.push(`${I.gov}BILL: ${co.value[0][1]}`);
+    if (tr.value?.[0]) tickerItems.push(`${I.search}TRENDING: ${tr.value[0][1]}`);
+    setTicker(tickerItems);
   }
 
-  updateStatus(`loaded · ${new Date().toLocaleTimeString()}`);
+  updateStatus(`{${C.green}-fg}${I.dot} LIVE{/} {${C.dim}-fg}${new Date().toLocaleTimeString()}{/}`);
   screen.render();
 }
+
+// ── Resize ──────────────────────────────────────────────
+screen.on('resize', () => {
+  for (const w of Object.values(W)) {
+    if (w && typeof w.emit === 'function') w.emit('attach');
+  }
+  screen.render();
+});
 
 // ── Keys ────────────────────────────────────────────────
 screen.key(['q', 'C-c'], () => process.exit(0));
@@ -253,16 +459,9 @@ screen.key(['3'], () => showPage(2));
 screen.key(['4'], () => showPage(3));
 screen.key(['5'], () => showPage(4));
 screen.key(['tab'], () => showPage((currentPage + 1) % PAGE_NAMES.length));
+screen.key(['S-tab'], () => showPage((currentPage - 1 + PAGE_NAMES.length) % PAGE_NAMES.length));
 
-// ── Resize handling ──────────────────────────────────────
-screen.on('resize', () => {
-  for (const w of Object.values(W)) {
-    if (w && typeof w.emit === 'function') w.emit('attach');
-  }
-  screen.render();
-});
-
-// ── Auto-refresh every 2 min ────────────────────────────
+// ── Auto-refresh ────────────────────────────────────────
 setInterval(() => loadPageData(), 120_000);
 
 // ── Boot ────────────────────────────────────────────────
