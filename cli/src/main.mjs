@@ -29,9 +29,9 @@ import { fetch_pypi } from './services/pypi.mjs';
 import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
 import { computeClownIndex, computeDoomIndex, computeMainCharIndex, computeTechPanicIndex } from './services/custom-indices.mjs';
 import { cachedFetch, cacheStats } from './cache.mjs';
-import { getTagline, rotateTagline, getBootMessages, getScanFrame, getGlitchText, getSignalBar, generateAlerts, getTimeString, getUptimeString, getSpinner, glitchBurst, gradientBar, statusDot } from './vibes.mjs';
+import { getTimeString } from './vibes.mjs';
 
-const START_TIME = Date.now();
+// no performative shit — just data
 
 // Wrap fetch fn with local SQLite cache. Stale data served instantly, refresh in background.
 function cf(key, fn, ttl = 120) {
@@ -111,13 +111,24 @@ let grid = null;
 const W = {};
 
 // ── Widget factories ────────────────────────────────────
+// Standard column layouts (blessed-contrib columnWidth is in chars)
+const COL = {
+  feed5: [3, 45, 6, 6, 3],    // #, title, pts, cmt, age
+  feed3: [3, 50, 8],           // #, title, metric
+  feed4: [3, 42, 6, 8],       // #, title, pct, volume
+  pred:  [3, 40, 5, 9],       // #, question, yes%, volume
+  wide2: [3, 55],              // #, title only
+  kv3:   [3, 30, 10],          // #, name, value
+  geo:   [5, 40, 4, 5],        // mag/bill, location/title, age, extra
+};
+
 function tbl(row, col, rowSpan, colSpan, label, widths) {
   return grid.set(row, col, rowSpan, colSpan, contrib.table, {
     label: ` ${label} `,
     keys: false,
     interactive: false,
-    columnSpacing: 1,
-    columnWidth: widths || [4, 50, 10, 10, 6],
+    columnSpacing: 2,
+    columnWidth: widths,
     style: {
       header: { fg: 'cyan', bold: true },
       cell: { fg: 'green' },
@@ -202,9 +213,9 @@ function donutWidget(row, col, rowSpan, colSpan, label) {
   });
 }
 
-// ── Ticker bar at bottom ────────────────────────────────
+// ── Ticker bar at TOP ───────────────────────────────────
 const tickerBar = blessed.box({
-  bottom: 1, left: 0, width: '100%', height: 1,
+  top: 0, left: 0, width: '100%', height: 1,
   tags: true,
   style: { fg: 'yellow', bg: 'black' },
 });
@@ -238,45 +249,15 @@ const statusBar = blessed.box({
 function updateStatus(msg) {
   const tabs = PAGE_NAMES.map((n, i) =>
     i === currentPage
-      ? `{yellow-fg}{bold} ${n} {/bold}{/}`
-      : `{gray-fg} ${n} {/}`
+      ? `{yellow-fg}{bold}${n}{/bold}{/}`
+      : `{gray-fg}${n}{/}`
   ).join('{gray-fg}│{/}');
-  statusBar.setContent(
-    ` ${tabs} {gray-fg}│{/} ${msg} {gray-fg}│{/} {cyan-fg}[1-6]{/} pages {cyan-fg}[r]{/} refresh {cyan-fg}[q]{/} quit`
-  );
-  screen.render();
-}
-
-// ── Header ──────────────────────────────────────────────
-const headerBox = blessed.box({
-  top: 0, left: 0, width: '100%', height: 3,
-  tags: true,
-  style: { fg: 'cyan', bg: 'black' },
-});
-
-function updateHeader() {
   const time = getTimeString();
-  const uptime = getUptimeString(START_TIME);
-  const scan = getScanFrame();
-  const spinner = getSpinner('braille');
-  const tagline = getTagline();
-  const signal = getSignalBar();
-  const stats = cacheStats();
-  const glitch = Math.random() > 0.92 ? glitchBurst() : '';
-  headerBox.setContent(
-    `{yellow-fg}${scan}{/} {bold}{cyan-fg}◆ TERMINALLY ONLINE ◆{/bold}{/} {gray-fg}━━{/} {green-fg}${tagline}{/} {gray-fg}━━{/} {red-fg}${spinner} LIVE{/} ${glitch}\n` +
-    `{gray-fg}${I.clock}{/}{white-fg}${time}{/} {gray-fg}│{/} {gray-fg}UP:{/}{cyan-fg}${uptime}{/} {gray-fg}│{/} ${statusDot('ok')} {gray-fg}SIG:{/}{green-fg}${signal}{/} {gray-fg}│{/} {gray-fg}▸ CACHE:{/}{cyan-fg}${stats.keys}{/} {gray-fg}│{/} {gray-fg}▸ FEEDS:{/}{yellow-fg}24{/} {gray-fg}│{/} {gray-fg}▸ IDX:{/}{magenta-fg}6{/} {gray-fg}│{/} {gray-fg}▸ SRC:{/}{cyan-fg}90+{/}`
+  statusBar.setContent(
+    ` ${tabs} {gray-fg}│{/} ${msg} {gray-fg}│{/} {white-fg}${time}{/} {gray-fg}│{/} {cyan-fg}[1-6]{/} {cyan-fg}[r]{/} {cyan-fg}[q]{/}`
   );
-}
-
-// Live clock — tick every second
-setInterval(() => {
-  updateHeader();
   screen.render();
-}, 1000);
-
-// Rotate tagline every 15 seconds
-setInterval(() => rotateTagline(), 15_000);
+}
 
 // ── Page builders ───────────────────────────────────────
 function clearScreen() {
@@ -287,65 +268,65 @@ function clearScreen() {
 }
 
 function buildMain() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
-  W.hn = tbl(0, 0, 4, 4, `${I.hn}ORANGE SITE`, [3, 44, 5, 5, 3]);
-  W.reddit = tbl(0, 4, 4, 4, `${I.reddit}REGARDED FINANCE`, [3, 40, 6, 7, 3]);
-  W.trends = tbl(0, 8, 4, 4, `${I.search}NORMIE RADAR`, [3, 35, 12]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  W.hn = tbl(0, 0, 4, 4, `${I.hn}HACKER NEWS`, COL.feed5);
+  W.reddit = tbl(0, 4, 4, 4, `${I.reddit}r/WALLSTREETBETS`, COL.feed5);
+  W.trends = tbl(0, 8, 4, 4, `${I.search}GOOGLE TRENDS`, COL.feed3);
 
-  W.poly = tbl(4, 0, 4, 4, `${I.chart}BETTING ON REALITY`, [3, 38, 5, 8]);
-  W.manifold = tbl(4, 4, 4, 4, `${I.brain}NERD BETS`, [3, 38, 5, 8]);
-  W.vibes = gaugeWidget(4, 8, 2, 2, `${I.fire}SO COOKED / SO BACK`, 'yellow');
-  W.degen = gaugeWidget(6, 8, 2, 2, `${I.bolt}DEGEN INDEX`, 'magenta');
-  W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WHO DIED?`, [3, 18, 6]);
+  W.poly = tbl(4, 0, 4, 4, `${I.chart}POLYMARKET`, COL.pred);
+  W.manifold = tbl(4, 4, 4, 4, `${I.brain}MANIFOLD`, COL.pred);
+  W.vibes = gaugeWidget(4, 8, 2, 2, `${I.fire}COOKED/BACK`, 'yellow');
+  W.degen = gaugeWidget(6, 8, 2, 2, `${I.bolt}DEGEN`, 'magenta');
+  W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WIKI SPIKES`, COL.kv3);
 
-  W.lobsters = tbl(8, 0, 4, 4, `${I.trophy}CRUSTACEAN NEWS`, [3, 40, 4, 6, 3]);
-  W.ph = tbl(8, 4, 4, 4, `${I.rocket}SHIPS THAT SINK`, [3, 48]);
-  W.congress = tbl(8, 8, 4, 4, `${I.gov}YOUR TAX DOLLARS`, [8, 38, 7]);
+  W.lobsters = tbl(8, 0, 4, 4, `${I.trophy}LOBSTE.RS`, COL.feed5);
+  W.ph = tbl(8, 4, 4, 4, `${I.rocket}PRODUCT HUNT`, COL.wide2);
+  W.congress = tbl(8, 8, 4, 4, `${I.gov}CONGRESS`, COL.geo);
 }
 
 function buildMarkets() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
-  W.dex = tbl(0, 0, 4, 6, `${I.bolt}PAID SHILLS (DEX BOOST)`, [3, 36, 8, 8]);
-  W.coins = tbl(0, 6, 4, 6, `${I.coin}CT IS WATCHING`, [3, 20, 8, 5, 8]);
-  W.poly2 = tbl(4, 0, 4, 6, `${I.chart}BETTING ON REALITY`, [3, 42, 5, 8]);
-  W.manifold2 = tbl(4, 6, 4, 6, `${I.brain}GALAXY BRAIN BETS`, [3, 42, 5, 8]);
-  W.insider = tbl(8, 0, 4, 6, `${I.money}CONGRESS BUYING CALLS`, [3, 38, 8, 10]);
-  W.breaches = tbl(8, 6, 4, 6, `${I.skull}YOUR PASSWORD LEAKED`, [3, 28, 10, 10]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  W.dex = tbl(0, 0, 4, 6, `${I.bolt}DEX BOOSTED`, COL.feed4);
+  W.coins = tbl(0, 6, 4, 6, `${I.coin}TRENDING COINS`, COL.feed5);
+  W.poly2 = tbl(4, 0, 4, 6, `${I.chart}POLYMARKET`, COL.pred);
+  W.manifold2 = tbl(4, 6, 4, 6, `${I.brain}MANIFOLD`, COL.pred);
+  W.insider = tbl(8, 0, 4, 6, `${I.money}SEC INSIDER`, COL.feed4);
+  W.breaches = tbl(8, 6, 4, 6, `${I.skull}DATA BREACHES`, COL.feed4);
 }
 
 function buildDev() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
-  W.github = tbl(0, 0, 4, 6, `${I.git}FRESH REPOS (7d)`, [3, 34, 8, 8]);
-  W.arxiv = tbl(0, 6, 4, 6, `${I.brain}PAPERS NO ONE READS`, [3, 40, 20, 10]);
-  W.npm = tbl(4, 0, 4, 4, `${I.pkg}NPM INSTALL REGRET`, [3, 20, 10]);
-  W.pypi = tbl(4, 4, 4, 4, `${I.pkg}PIP INSTALL COPE`, [3, 20, 10]);
-  W.s2 = tbl(4, 8, 4, 4, `${I.brain}CITATION FARMING`, [3, 36, 8, 5]);
-  W.hn2 = tbl(8, 0, 4, 6, `${I.hn}ORANGE SITE`, [3, 44, 5, 5, 3]);
-  W.lobsters2 = tbl(8, 6, 4, 6, `${I.trophy}CRUSTACEAN NEWS`, [3, 44, 4, 6, 3]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  W.github = tbl(0, 0, 4, 6, `${I.git}GITHUB RISING`, COL.feed4);
+  W.arxiv = tbl(0, 6, 4, 6, `${I.brain}ARXIV AI`, COL.feed4);
+  W.npm = tbl(4, 0, 4, 4, `${I.pkg}NPM`, COL.kv3);
+  W.pypi = tbl(4, 4, 4, 4, `${I.pkg}PYPI`, COL.kv3);
+  W.s2 = tbl(4, 8, 4, 4, `${I.brain}SEMANTIC SCHOLAR`, COL.feed4);
+  W.hn2 = tbl(8, 0, 4, 6, `${I.hn}HACKER NEWS`, COL.feed5);
+  W.lobsters2 = tbl(8, 6, 4, 6, `${I.trophy}LOBSTE.RS`, COL.feed5);
 }
 
 function buildWeird() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
-  W.wiki2 = tbl(0, 0, 4, 6, `${I.wiki}WHAT NORMIES GOOGLED`, [3, 38, 8]);
-  W.crtsh = tbl(0, 6, 4, 6, `${I.cert}SSL STALKING (openai)`, [38, 16, 10]);
-  W.usa = tbl(4, 0, 4, 6, `${I.money}WHO'S EATING GOV MONEY`, [3, 26, 10, 20]);
-  W.wayback = tbl(4, 6, 4, 6, `${I.clock}RECEIPTS (openai.com)`, [10, 34, 4]);
-  W.ooni = tbl(8, 0, 4, 6, `${I.lock}WHO GOT CENSORED`, [3, 38, 8, 10]);
-  W.quakes2 = tbl(8, 6, 4, 6, `${I.quake}EARTH IS SHAKING`, [4, 34, 4, 5]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  W.wiki2 = tbl(0, 0, 4, 6, `${I.wiki}WIKIPEDIA TOP`, COL.feed3);
+  W.crtsh = tbl(0, 6, 4, 6, `${I.cert}CERT TRANSPARENCY`, COL.feed3);
+  W.usa = tbl(4, 0, 4, 6, `${I.money}FED CONTRACTS`, COL.feed4);
+  W.wayback = tbl(4, 6, 4, 6, `${I.clock}WAYBACK MACHINE`, COL.feed3);
+  W.ooni = tbl(8, 0, 4, 6, `${I.lock}CENSORSHIP`, COL.feed4);
+  W.quakes2 = tbl(8, 6, 4, 6, `${I.quake}EARTHQUAKES`, COL.geo);
 }
 
 function buildIntel() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
-  W.insider2 = tbl(0, 0, 4, 6, `${I.money}PELOSI'S PORTFOLIO`, [3, 38, 8, 10]);
-  W.congress2 = tbl(0, 6, 4, 6, `${I.gov}LAWS THEY'RE COOKING`, [8, 40, 7]);
-  W.breaches2 = tbl(4, 0, 4, 6, `${I.skull}YOUR DATA (LEAKED)`, [3, 28, 10, 10]);
-  W.trends2 = tbl(4, 6, 4, 6, `${I.search}NORMIE RADAR`, [3, 35, 12]);
-  W.reddit2 = tbl(8, 0, 4, 6, `${I.reddit}r/TECHNOLOGY`, [3, 40, 6, 7, 3]);
-  W.reddit3 = tbl(8, 6, 4, 6, `${I.reddit}r/COPIUM`, [3, 40, 6, 7, 3]);
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  W.insider2 = tbl(0, 0, 4, 6, `${I.money}SEC INSIDER`, COL.feed4);
+  W.congress2 = tbl(0, 6, 4, 6, `${I.gov}CONGRESS`, COL.geo);
+  W.breaches2 = tbl(4, 0, 4, 6, `${I.skull}BREACHES`, COL.feed4);
+  W.trends2 = tbl(4, 6, 4, 6, `${I.search}GOOGLE TRENDS`, COL.feed3);
+  W.reddit2 = tbl(8, 0, 4, 6, `${I.reddit}r/TECHNOLOGY`, COL.feed5);
+  W.reddit3 = tbl(8, 6, 4, 6, `${I.reddit}r/CRYPTOCURRENCY`, COL.feed5);
 }
 
 function buildVibes() {
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
   W.vibesG = gaugeWidget(0, 0, 3, 4, `${I.fire}SO COOKED / SO BACK`, 'yellow');
   W.degenG = gaugeWidget(0, 4, 3, 4, `${I.bolt}DEGEN INDEX`, 'magenta');
   W.clownG = gaugeWidget(0, 8, 3, 4, `${I.rocket}CLOWN MARKET`, 'cyan');
@@ -363,7 +344,6 @@ function showPage(idx) {
   clearScreen();
   for (const k of Object.keys(W)) delete W[k];
   builders[idx]();
-  screen.append(headerBox);
   screen.append(tickerBar);
   screen.append(statusBar);
   screen.render();
@@ -563,45 +543,5 @@ screen.key(['S-tab'], () => showPage((currentPage - 1 + PAGE_NAMES.length) % PAG
 // ── Auto-refresh ────────────────────────────────────────
 setInterval(() => loadPageData(), 120_000);
 
-// ── Boot sequence ───────────────────────────────────────
-async function bootSequence() {
-  const bootScreen = blessed.box({
-    top: 'center', left: 'center',
-    width: '80%', height: '80%',
-    tags: true,
-    style: { fg: 'green', bg: 'black', border: { fg: 'yellow' } },
-    border: { type: 'line' },
-    label: ' {yellow-fg}◆ SYSTEM INIT ◆{/} ',
-  });
-  screen.append(bootScreen);
-
-  const msgs = getBootMessages(14);
-  let content = '\n';
-  content += '  {bold}{cyan-fg}╔╦╗╔═╗╦═╗╔╦╗╦╔╗╔╔═╗╦  ╦  ╦ ╦{/}\n';
-  content += '  {cyan-fg} ║ ║╣ ╠╦╝║║║║║║║╠═╣║  ║  ╚╦╝{/}\n';
-  content += '  {cyan-fg} ╩ ╚═╝╩╚═╩ ╩╩╝╚╝╩ ╩╩═╝╩═╝ ╩ {/}\n';
-  content += '  {green-fg}╔═╗╔╗╔╦  ╦╔╗╔╔═╗{/}\n';
-  content += '  {green-fg}║ ║║║║║  ║║║║║╣ {/}\n';
-  content += '  {green-fg}╚═╝╝╚╝╩═╝╩╝╚╝╚═╝{/}{/bold}\n\n';
-
-  for (const msg of msgs) {
-    const spinner = getSpinner('dot');
-    content += `  {cyan-fg}${spinner}{/} ${msg}\n`;
-    bootScreen.setContent(content);
-    screen.render();
-    await new Promise(r => setTimeout(r, 80 + Math.random() * 150));
-  }
-
-  content += '\n  {gray-fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{/}\n';
-  content += '  {bold}{yellow-fg}▸ ALL SYSTEMS NOMINAL{/}\n';
-  content += '  {bold}{red-fg}▸ STAY FROSTY. TRUST NOTHING. VERIFY EVERYTHING.{/bold}{/}\n';
-  content += '  {gray-fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{/}\n';
-  bootScreen.setContent(content);
-  screen.render();
-  await new Promise(r => setTimeout(r, 1000));
-
-  bootScreen.detach();
-  showPage(0);
-}
-
-bootSequence();
+// ── Boot ────────────────────────────────────────────────
+showPage(0);
