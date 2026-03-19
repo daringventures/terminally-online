@@ -12,6 +12,9 @@ import { BlueskyFirehosePanel } from './components/BlueskyFirehosePanel';
 import { GitHubTrendingPanel } from './components/GitHubTrendingPanel';
 import { ArxivPanel } from './components/ArxivPanel';
 import { NpmTrendsPanel } from './components/NpmTrendsPanel';
+import { SECEdgarPanel } from './components/SECEdgarPanel';
+import { EarthquakePanel } from './components/EarthquakePanel';
+import { DataBreachPanel } from './components/DataBreachPanel';
 import { VC_FEEDS, TECH_FEEDS, CRYPTO_FEEDS } from './config/feeds';
 
 function renderHeader(): void {
@@ -39,6 +42,9 @@ async function init(): Promise<void> {
     new LobstersPanel(),
     new ArxivPanel('cs.AI', 'arXiv — AI Papers'),
     new NpmTrendsPanel(),
+    new SECEdgarPanel(),
+    new EarthquakePanel(),
+    new DataBreachPanel(),
     new RSSPanel('vc-rss', 'VC & Startups', VC_FEEDS),
     new RSSPanel('tech-rss', 'Tech News', TECH_FEEDS),
     new RSSPanel('crypto-rss', 'Crypto News', CRYPTO_FEEDS),
