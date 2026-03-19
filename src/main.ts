@@ -2,6 +2,9 @@ import { HackerNewsPanel } from './components/HackerNewsPanel';
 import { RedditPanel } from './components/RedditPanel';
 import { CoinGeckoTrendingPanel } from './components/CoinGeckoTrendingPanel';
 import { FearGreedPanel } from './components/FearGreedPanel';
+import { DexScreenerPanel } from './components/DexScreenerPanel';
+import { WikipediaPanel } from './components/WikipediaPanel';
+import { GoogleTrendsPanel } from './components/GoogleTrendsPanel';
 
 function renderHeader(): void {
   const header = document.getElementById('header')!;
@@ -19,8 +22,11 @@ async function init(): Promise<void> {
   const panels = [
     new HackerNewsPanel(),
     new RedditPanel('wallstreetbets'),
+    new DexScreenerPanel(),
     new CoinGeckoTrendingPanel(),
     new FearGreedPanel(),
+    new GoogleTrendsPanel(),
+    new WikipediaPanel(),
   ];
 
   for (const panel of panels) {
