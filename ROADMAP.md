@@ -1,20 +1,22 @@
 ## Terminally Online Terminal — Roadmap
 
 ### Phase 1: Foundation
-- [ ] Project scaffold (Vite + vanilla TS)
-- [ ] Panel base class + CSS grid layout
-- [ ] Theme system (dark-first)
-- [ ] Dev server running
+- [x] Project scaffold (Vite + vanilla TS)
+- [x] Panel base class + CSS grid layout
+- [x] Theme system (dark-first)
+- [x] Dev server running
 
 ### Phase 2: Tier 1 Sources (no auth, highest signal)
-- [ ] Hacker News panel (Firebase API — real-time, no auth)
-- [ ] Reddit trending panel (.json hack — no auth)
+- [x] Hacker News panel (Firebase API — real-time, no auth)
+- [x] Reddit trending panel (.json hack — no auth)
 - [ ] RSS engine + VC/tech feed panels (a16z, Sequoia, TechCrunch, etc.)
-- [ ] DexScreener panel (DEX token launches, no auth)
-- [ ] CoinGecko trending panel (no auth)
-- [ ] Fear & Greed Index widget (no auth, single number)
-- [ ] Google Trends RSS panel (no auth)
-- [ ] Wikipedia pageviews anomaly panel (no auth, sleeper signal)
+- [x] DexScreener panel (DEX token launches, no auth)
+- [x] CoinGecko trending panel (no auth)
+- [x] Fear & Greed Index widget (no auth, single number)
+- [x] Google Trends RSS panel (no auth)
+- [x] Wikipedia pageviews anomaly panel (no auth, sleeper signal)
+- [x] Polymarket prediction markets panel (no auth)
+- [x] Lobste.rs panel (no auth, eng-focused)
 - [ ] Bluesky Jetstream panel (WebSocket firehose, no auth)
 
 ### Phase 3: Seeder + Caching Infrastructure
