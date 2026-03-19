@@ -170,6 +170,73 @@ export function getUptimeString(startTime) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// ── Braille Spinners ────────────────────────────────────
+const BRAILLE_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const DOT_SPINNER = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷'];
+const ORBIT_SPINNER = ['◐', '◓', '◑', '◒'];
+let spinFrame = 0;
+
+export function getSpinner(style = 'braille') {
+  const frames = style === 'dot' ? DOT_SPINNER : style === 'orbit' ? ORBIT_SPINNER : BRAILLE_FRAMES;
+  const frame = frames[spinFrame % frames.length];
+  spinFrame++;
+  return frame;
+}
+
+// ── Sparkline from array of numbers ─────────────────────
+const SPARK_CHARS = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+export function sparkline(values, width = 20) {
+  if (!values.length) return SPARK_CHARS[0].repeat(width);
+  // Take last `width` values
+  const slice = values.slice(-width);
+  const min = Math.min(...slice);
+  const max = Math.max(...slice);
+  const range = max - min || 1;
+  return slice.map(v => {
+    const idx = Math.floor(((v - min) / range) * (SPARK_CHARS.length - 1));
+    return SPARK_CHARS[idx];
+  }).join('');
+}
+
+// ── Status Dots ─────────────────────────────────────────
+export function statusDot(status) {
+  switch (status) {
+    case 'ok': return '{green-fg}●{/}';
+    case 'warn': return '{yellow-fg}◐{/}';
+    case 'error': return '{red-fg}●{/}';
+    case 'loading': return `{cyan-fg}${getSpinner('orbit')}{/}`;
+    case 'offline': return '{gray-fg}○{/}';
+    default: return '{gray-fg}○{/}';
+  }
+}
+
+// ── Gradient Bar ────────────────────────────────────────
+export function gradientBar(value, width = 20) {
+  const filled = Math.round((value / 100) * width);
+  const bar = '█'.repeat(filled) + '░'.repeat(width - filled);
+  if (value <= 25) return `{red-fg}${bar}{/}`;
+  if (value <= 50) return `{yellow-fg}${bar}{/}`;
+  if (value <= 75) return `{green-fg}${bar}{/}`;
+  return `{cyan-fg}${bar}{/}`;
+}
+
+// ── Section Divider ─────────────────────────────────────
+export function divider(text, width = 60) {
+  const padded = ` ${text} `;
+  const side = Math.max(0, Math.floor((width - padded.length) / 2));
+  return `{gray-fg}${'━'.repeat(side)}{/}{yellow-fg}${padded}{/}{gray-fg}${'━'.repeat(side)}{/}`;
+}
+
+// ── Random Glitch Burst ─────────────────────────────────
+export function glitchBurst() {
+  const chars = '░▒▓█▀▄▌▐╳╱╲◌◍◎●';
+  const len = 3 + Math.floor(Math.random() * 8);
+  let s = '';
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `{gray-fg}${s}{/}`;
+}
+
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }

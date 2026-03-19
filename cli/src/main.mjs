@@ -29,7 +29,7 @@ import { fetch_pypi } from './services/pypi.mjs';
 import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
 import { computeClownIndex, computeDoomIndex, computeMainCharIndex, computeTechPanicIndex } from './services/custom-indices.mjs';
 import { cachedFetch, cacheStats } from './cache.mjs';
-import { getTagline, rotateTagline, getBootMessages, getScanFrame, getGlitchText, getSignalBar, generateAlerts, getTimeString, getUptimeString } from './vibes.mjs';
+import { getTagline, rotateTagline, getBootMessages, getScanFrame, getGlitchText, getSignalBar, generateAlerts, getTimeString, getUptimeString, getSpinner, glitchBurst, gradientBar, statusDot } from './vibes.mjs';
 
 const START_TIME = Date.now();
 
@@ -119,12 +119,12 @@ function tbl(row, col, rowSpan, colSpan, label, widths) {
     columnSpacing: 1,
     columnWidth: widths || [4, 50, 10, 10, 6],
     style: {
-      header: { fg: C.cyan, bold: true },
-      cell: { fg: C.white },
-      border: { fg: C.border },
-      label: { fg: C.amber, bold: true },
+      header: { fg: 'cyan', bold: true },
+      cell: { fg: 'green' },
+      border: { fg: 'gray' },
+      label: { fg: 'yellow', bold: true },
     },
-    border: { type: 'line', fg: C.border },
+    border: { type: 'line', fg: 'gray' },
   });
 }
 
@@ -213,7 +213,7 @@ let tickerText = '';
 let tickerOffset = 0;
 
 function setTicker(items) {
-  tickerText = items.map(t => `  ${I.dot} ${t}  `).join('');
+  tickerText = items.map(t => `  ◆ ${t}  `).join('{gray-fg}│{/}');
   tickerOffset = 0;
 }
 
@@ -258,12 +258,14 @@ function updateHeader() {
   const time = getTimeString();
   const uptime = getUptimeString(START_TIME);
   const scan = getScanFrame();
+  const spinner = getSpinner('braille');
   const tagline = getTagline();
   const signal = getSignalBar();
   const stats = cacheStats();
+  const glitch = Math.random() > 0.92 ? glitchBurst() : '';
   headerBox.setContent(
-    `{yellow-fg}${scan}{/} {bold}{cyan-fg}TERMINALLY ONLINE{/bold}{/} {gray-fg}━{/} {green-fg}${tagline}{/} {gray-fg}━{/} {red-fg}${I.fire}LIVE{/} {gray-fg}${scan}{/}\n` +
-    `{gray-fg}${I.clock}{/}{white-fg}${time}{/} {gray-fg}│{/} {gray-fg}UP:{/}{cyan-fg}${uptime}{/} {gray-fg}│{/} {gray-fg}SIG:{/}{green-fg}${signal}{/} {gray-fg}│{/} {gray-fg}CACHE:{/}{cyan-fg}${stats.keys}{/} {gray-fg}│{/} {gray-fg}FEEDS:{/}{yellow-fg}24{/} {gray-fg}│{/} {gray-fg}IDX:{/}{magenta-fg}6{/}`
+    `{yellow-fg}${scan}{/} {bold}{cyan-fg}◆ TERMINALLY ONLINE ◆{/bold}{/} {gray-fg}━━{/} {green-fg}${tagline}{/} {gray-fg}━━{/} {red-fg}${spinner} LIVE{/} ${glitch}\n` +
+    `{gray-fg}${I.clock}{/}{white-fg}${time}{/} {gray-fg}│{/} {gray-fg}UP:{/}{cyan-fg}${uptime}{/} {gray-fg}│{/} ${statusDot('ok')} {gray-fg}SIG:{/}{green-fg}${signal}{/} {gray-fg}│{/} {gray-fg}▸ CACHE:{/}{cyan-fg}${stats.keys}{/} {gray-fg}│{/} {gray-fg}▸ FEEDS:{/}{yellow-fg}24{/} {gray-fg}│{/} {gray-fg}▸ IDX:{/}{magenta-fg}6{/} {gray-fg}│{/} {gray-fg}▸ SRC:{/}{cyan-fg}90+{/}`
   );
 }
 
@@ -569,24 +571,34 @@ async function bootSequence() {
     tags: true,
     style: { fg: 'green', bg: 'black', border: { fg: 'yellow' } },
     border: { type: 'line' },
-    label: ' {yellow-fg}SYSTEM BOOT{/} ',
+    label: ' {yellow-fg}◆ SYSTEM INIT ◆{/} ',
   });
   screen.append(bootScreen);
 
-  const msgs = getBootMessages(12);
-  let content = '\n{bold}{cyan-fg}  ████████╗ ██████╗\n  ╚══██╔══╝██╔═══██╗\n     ██║   ██║   ██║\n     ██║   ██║   ██║\n     ██║   ╚██████╔╝\n     ╚═╝    ╚═════╝{/bold}{/}\n\n';
+  const msgs = getBootMessages(14);
+  let content = '\n';
+  content += '  {bold}{cyan-fg}╔╦╗╔═╗╦═╗╔╦╗╦╔╗╔╔═╗╦  ╦  ╦ ╦{/}\n';
+  content += '  {cyan-fg} ║ ║╣ ╠╦╝║║║║║║║╠═╣║  ║  ╚╦╝{/}\n';
+  content += '  {cyan-fg} ╩ ╚═╝╩╚═╩ ╩╩╝╚╝╩ ╩╩═╝╩═╝ ╩ {/}\n';
+  content += '  {green-fg}╔═╗╔╗╔╦  ╦╔╗╔╔═╗{/}\n';
+  content += '  {green-fg}║ ║║║║║  ║║║║║╣ {/}\n';
+  content += '  {green-fg}╚═╝╝╚╝╩═╝╩╝╚╝╚═╝{/}{/bold}\n\n';
 
   for (const msg of msgs) {
-    content += `  ${msg}\n`;
+    const spinner = getSpinner('dot');
+    content += `  {cyan-fg}${spinner}{/} ${msg}\n`;
     bootScreen.setContent(content);
     screen.render();
-    await new Promise(r => setTimeout(r, 120 + Math.random() * 180));
+    await new Promise(r => setTimeout(r, 80 + Math.random() * 150));
   }
 
-  content += `\n  {bold}{yellow-fg}> TERMINAL IS LIVE. STAY FROSTY.{/bold}{/}\n`;
+  content += '\n  {gray-fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{/}\n';
+  content += '  {bold}{yellow-fg}▸ ALL SYSTEMS NOMINAL{/}\n';
+  content += '  {bold}{red-fg}▸ STAY FROSTY. TRUST NOTHING. VERIFY EVERYTHING.{/bold}{/}\n';
+  content += '  {gray-fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{/}\n';
   bootScreen.setContent(content);
   screen.render();
-  await new Promise(r => setTimeout(r, 800));
+  await new Promise(r => setTimeout(r, 1000));
 
   bootScreen.detach();
   showPage(0);
