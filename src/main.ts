@@ -9,6 +9,9 @@ import { PolymarketPanel } from './components/PolymarketPanel';
 import { LobstersPanel } from './components/LobstersPanel';
 import { RSSPanel } from './components/RSSPanel';
 import { BlueskyFirehosePanel } from './components/BlueskyFirehosePanel';
+import { GitHubTrendingPanel } from './components/GitHubTrendingPanel';
+import { ArxivPanel } from './components/ArxivPanel';
+import { NpmTrendsPanel } from './components/NpmTrendsPanel';
 import { VC_FEEDS, TECH_FEEDS, CRYPTO_FEEDS } from './config/feeds';
 
 function renderHeader(): void {
@@ -32,7 +35,10 @@ async function init(): Promise<void> {
     new CoinGeckoTrendingPanel(),
     new FearGreedPanel(),
     new PolymarketPanel(),
+    new GitHubTrendingPanel(),
     new LobstersPanel(),
+    new ArxivPanel('cs.AI', 'arXiv — AI Papers'),
+    new NpmTrendsPanel(),
     new RSSPanel('vc-rss', 'VC & Startups', VC_FEEDS),
     new RSSPanel('tech-rss', 'Tech News', TECH_FEEDS),
     new RSSPanel('crypto-rss', 'Crypto News', CRYPTO_FEEDS),
