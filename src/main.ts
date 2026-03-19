@@ -5,6 +5,8 @@ import { FearGreedPanel } from './components/FearGreedPanel';
 import { DexScreenerPanel } from './components/DexScreenerPanel';
 import { WikipediaPanel } from './components/WikipediaPanel';
 import { GoogleTrendsPanel } from './components/GoogleTrendsPanel';
+import { PolymarketPanel } from './components/PolymarketPanel';
+import { LobstersPanel } from './components/LobstersPanel';
 
 function renderHeader(): void {
   const header = document.getElementById('header')!;
@@ -25,6 +27,8 @@ async function init(): Promise<void> {
     new DexScreenerPanel(),
     new CoinGeckoTrendingPanel(),
     new FearGreedPanel(),
+    new PolymarketPanel(),
+    new LobstersPanel(),
     new GoogleTrendsPanel(),
     new WikipediaPanel(),
   ];
