@@ -61,21 +61,21 @@ const I = {
   barl:    '░',
 };
 
-// ── Bloomberg-style color palette ───────────────────────
+// ── Bloomberg-style color palette (named colors only — blessed limitation) ──
 const C = {
-  orange: '#ff8c00',
-  amber: '#ffbf00',
-  green: '#00ff88',
-  red: '#ff4444',
-  cyan: '#00dfff',
-  blue: '#4488ff',
-  purple: '#bb88ff',
-  white: '#e0e0e0',
-  dim: '#555555',
-  bg: '#0a0a0a',
-  panelBg: '#111111',
-  border: '#333333',
-  header: '#00dfff',
+  orange: 'yellow',
+  amber: 'yellow',
+  green: 'green',
+  red: 'red',
+  cyan: 'cyan',
+  blue: 'blue',
+  purple: 'magenta',
+  white: 'white',
+  dim: 'gray',
+  bg: 'black',
+  panelBg: 'black',
+  border: 'gray',
+  header: 'cyan',
 };
 
 // ── Screen ──────────────────────────────────────────────
@@ -131,16 +131,16 @@ function logWidget(row, col, rowSpan, colSpan, label) {
   });
 }
 
-function gaugeWidget(row, col, rowSpan, colSpan, label) {
+function gaugeWidget(row, col, rowSpan, colSpan, label, color = 'yellow') {
   return grid.set(row, col, rowSpan, colSpan, contrib.gauge, {
     label: ` ${label} `,
-    stroke: C.amber,
-    fill: C.dim,
+    stroke: color,
+    fill: 'white',
     style: {
-      border: { fg: C.border },
-      label: { fg: C.amber, bold: true },
+      border: { fg: 'gray' },
+      label: { fg: 'yellow', bold: true },
     },
-    border: { type: 'line', fg: C.border },
+    border: { type: 'line', fg: 'gray' },
   });
 }
 
@@ -195,7 +195,7 @@ function donutWidget(row, col, rowSpan, colSpan, label) {
 const tickerBar = blessed.box({
   bottom: 1, left: 0, width: '100%', height: 1,
   tags: true,
-  style: { fg: C.amber, bg: '#1a1a00' },
+  style: { fg: 'yellow', bg: 'black' },
 });
 
 let tickerText = '';
@@ -221,17 +221,17 @@ setInterval(animateTicker, 150);
 const statusBar = blessed.box({
   bottom: 0, left: 0, width: '100%', height: 1,
   tags: true,
-  style: { fg: C.white, bg: '#0d0d0d' },
+  style: { fg: 'white', bg: 'black' },
 });
 
 function updateStatus(msg) {
   const tabs = PAGE_NAMES.map((n, i) =>
     i === currentPage
-      ? `{${C.amber}-fg}{bold} ${n} {/bold}{/}`
-      : `{${C.dim}-fg} ${n} {/}`
+      ? `{yellow-fg}{bold} ${n} {/bold}{/}`
+      : `{gray-fg} ${n} {/}`
   ).join('{gray-fg}│{/}');
   statusBar.setContent(
-    ` ${tabs} {${C.dim}-fg}│{/} ${msg} {${C.dim}-fg}│{/} {${C.cyan}-fg}[1-5]{/} pages {${C.cyan}-fg}[r]{/} refresh {${C.cyan}-fg}[q]{/} quit`
+    ` ${tabs} {gray-fg}│{/} ${msg} {gray-fg}│{/} {cyan-fg}[1-5]{/} pages {cyan-fg}[r]{/} refresh {cyan-fg}[q]{/} quit`
   );
   screen.render();
 }
@@ -240,10 +240,10 @@ function updateStatus(msg) {
 const headerBox = blessed.box({
   top: 0, left: 0, width: '100%', height: 3,
   tags: true,
-  style: { fg: C.cyan, bg: '#0a0a0a' },
-  content: `{center}{bold}{${C.amber}-fg}▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄{/}
-{${C.amber}-fg}█{/} ${I.bolt}{${C.cyan}-fg}TERMINALLY ONLINE{/} {${C.dim}-fg}━━{/} {${C.green}-fg}see everything. touch nothing. profit maybe.{/} {${C.dim}-fg}━━{/} {${C.red}-fg}${I.fire}LIVE{/} {${C.amber}-fg}█{/}
-{${C.amber}-fg}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{/}{/center}`,
+  style: { fg: 'cyan', bg: 'black' },
+  content: `{center}{bold}{yellow-fg}▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄{/}
+{yellow-fg}█{/} ${I.bolt}{cyan-fg}TERMINALLY ONLINE{/} {gray-fg}━━{/} {green-fg}see everything. touch nothing. profit maybe.{/} {gray-fg}━━{/} {red-fg}${I.fire}LIVE{/} {yellow-fg}█{/}
+{yellow-fg}▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀{/}{/center}`,
 });
 
 // ── Page builders ───────────────────────────────────────
@@ -262,9 +262,9 @@ function buildMain() {
 
   W.poly = tbl(4, 0, 4, 4, `${I.chart}BETTING ON REALITY`, [3, 38, 5, 8]);
   W.manifold = tbl(4, 4, 4, 4, `${I.brain}NERD BETS`, [3, 38, 5, 8]);
-  W.vibes = gaugeWidget(4, 8, 2, 2, `${I.fire}SO COOKED / SO BACK`);
-  W.degen = gaugeWidget(6, 8, 2, 2, `${I.bolt}DEGEN INDEX`);
-  W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WHO DIED?`, [3, 24, 7]);
+  W.vibes = gaugeWidget(4, 8, 2, 2, `${I.fire}SO COOKED / SO BACK`, 'yellow');
+  W.degen = gaugeWidget(6, 8, 2, 2, `${I.bolt}DEGEN INDEX`, 'magenta');
+  W.wiki = tbl(4, 10, 4, 2, `${I.wiki}WHO DIED?`, [3, 18, 6]);
 
   W.lobsters = tbl(8, 0, 4, 4, `${I.trophy}CRUSTACEAN NEWS`, [3, 40, 4, 6, 3]);
   W.ph = tbl(8, 4, 4, 4, `${I.rocket}SHIPS THAT SINK`, [3, 48]);
@@ -339,7 +339,7 @@ function set(widget, data) {
 }
 
 async function loadPageData() {
-  updateStatus(`{${C.amber}-fg}${I.bolt}FETCHING…{/}`);
+  updateStatus(`{yellow-fg}${I.bolt}FETCHING…{/}`);
   const p = currentPage;
 
   if (p === 0) {
@@ -446,7 +446,7 @@ async function loadPageData() {
     setTicker(tickerItems);
   }
 
-  updateStatus(`{${C.green}-fg}${I.dot} LIVE{/} {${C.dim}-fg}${new Date().toLocaleTimeString()}{/}`);
+  updateStatus(`{green-fg}${I.dot} LIVE{/} {gray-fg}${new Date().toLocaleTimeString()}{/}`);
   screen.render();
 }
 
