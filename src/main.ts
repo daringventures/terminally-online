@@ -1,4 +1,7 @@
 import { HackerNewsPanel } from './components/HackerNewsPanel';
+import { RedditPanel } from './components/RedditPanel';
+import { CoinGeckoTrendingPanel } from './components/CoinGeckoTrendingPanel';
+import { FearGreedPanel } from './components/FearGreedPanel';
 
 function renderHeader(): void {
   const header = document.getElementById('header')!;
@@ -15,6 +18,9 @@ async function init(): Promise<void> {
 
   const panels = [
     new HackerNewsPanel(),
+    new RedditPanel('wallstreetbets'),
+    new CoinGeckoTrendingPanel(),
+    new FearGreedPanel(),
   ];
 
   for (const panel of panels) {
