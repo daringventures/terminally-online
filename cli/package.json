@@ -1,0 +1,17 @@
+{
+  "name": "terminally-online-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "terminally-online": "./src/main.mjs"
+  },
+  "scripts": {
+    "start": "node src/main.mjs",
+    "dev": "node --watch src/main.mjs"
+  },
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0"
+  }
+}
