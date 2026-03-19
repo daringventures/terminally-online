@@ -27,6 +27,13 @@ import { fetch_s2_papers } from './services/semantic-scholar.mjs';
 import { fetch_producthunt } from './services/producthunt.mjs';
 import { fetch_pypi } from './services/pypi.mjs';
 import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
+import { computeClownIndex, computeDoomIndex, computeMainCharIndex, computeTechPanicIndex } from './services/custom-indices.mjs';
+import { cachedFetch, cacheStats } from './cache.mjs';
+
+// Wrap fetch fn with local SQLite cache. Stale data served instantly, refresh in background.
+function cf(key, fn, ttl = 120) {
+  return () => cachedFetch(key, fn, ttl);
+}
 
 // ── Nerd Font Icons ─────────────────────────────────────
 const I = {
@@ -94,6 +101,7 @@ const PAGE_NAMES = [
   `${I.git}NERD`,
   `${I.skull}CURSED`,
   `${I.eye}GLOWIE`,
+  `${I.chart}VIBES`,
 ];
 let currentPage = 0;
 let grid = null;
@@ -231,7 +239,7 @@ function updateStatus(msg) {
       : `{gray-fg} ${n} {/}`
   ).join('{gray-fg}│{/}');
   statusBar.setContent(
-    ` ${tabs} {gray-fg}│{/} ${msg} {gray-fg}│{/} {cyan-fg}[1-5]{/} pages {cyan-fg}[r]{/} refresh {cyan-fg}[q]{/} quit`
+    ` ${tabs} {gray-fg}│{/} ${msg} {gray-fg}│{/} {cyan-fg}[1-6]{/} pages {cyan-fg}[r]{/} refresh {cyan-fg}[q]{/} quit`
   );
   screen.render();
 }
@@ -312,7 +320,18 @@ function buildIntel() {
   W.reddit3 = tbl(8, 6, 4, 6, `${I.reddit}r/COPIUM`, [3, 40, 6, 7, 3]);
 }
 
-const builders = [buildMain, buildMarkets, buildDev, buildWeird, buildIntel];
+function buildVibes() {
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 3, bottom: 2 });
+  W.vibesG = gaugeWidget(0, 0, 3, 4, `${I.fire}SO COOKED / SO BACK`, 'yellow');
+  W.degenG = gaugeWidget(0, 4, 3, 4, `${I.bolt}DEGEN INDEX`, 'magenta');
+  W.clownG = gaugeWidget(0, 8, 3, 4, `${I.rocket}CLOWN MARKET`, 'cyan');
+  W.doomG = gaugeWidget(3, 0, 3, 4, `${I.skull}DOOM SCROLL`, 'red');
+  W.maincharG = gaugeWidget(3, 4, 3, 4, `${I.eye}MAIN CHARACTER`, 'green');
+  W.techpanicG = gaugeWidget(3, 8, 3, 4, `${I.brain}TECH BRO PANIC`, 'blue');
+  W.breakdownLog = logWidget(6, 0, 6, 12, `${I.chart}SIGNAL BREAKDOWN`);
+}
+
+const builders = [buildMain, buildMarkets, buildDev, buildWeird, buildIntel, buildVibes];
 
 // ── Page switch ─────────────────────────────────────────
 function showPage(idx) {
@@ -344,17 +363,17 @@ async function loadPageData() {
 
   if (p === 0) {
     const [hn, rd, tr, po, ma, wk, lo, ph, co, vibes, degen] = await Promise.allSettled([
-      safe(() => fetch_hn(25)),
-      safe(() => fetch_reddit('wallstreetbets', 20)),
-      safe(fetch_google_trends),
-      safe(() => fetch_polymarket(15)),
-      safe(() => fetch_manifold(15)),
-      safe(fetch_wiki_top),
-      safe(() => fetch_lobsters(20)),
-      safe(() => fetch_producthunt(15)),
-      safe(() => fetch_congress(15)),
-      safe(computeVibesIndex),
-      safe(computeDegenIndex),
+      safe(cf('hn', () => fetch_hn(25), 120)),
+      safe(cf('reddit-wsb', () => fetch_reddit('wallstreetbets', 20), 120)),
+      safe(cf('g-trends', fetch_google_trends, 300)),
+      safe(cf('polymarket', () => fetch_polymarket(15), 120)),
+      safe(cf('manifold', () => fetch_manifold(15), 300)),
+      safe(cf('wiki-top', fetch_wiki_top, 600)),
+      safe(cf('lobsters', () => fetch_lobsters(20), 120)),
+      safe(cf('producthunt', () => fetch_producthunt(15), 600)),
+      safe(cf('congress', () => fetch_congress(15), 1800)),
+      safe(cf('idx-vibes', computeVibesIndex, 120)),
+      safe(cf('idx-degen', computeDegenIndex, 120)),
     ]);
     set(W.hn, hn.value); set(W.reddit, rd.value); set(W.trends, tr.value);
     set(W.poly, po.value); set(W.manifold, ma.value);
@@ -385,9 +404,12 @@ async function loadPageData() {
   }
   else if (p === 1) {
     const [dx, co, po, ma, ins, br] = await Promise.allSettled([
-      safe(() => fetch_dex_boosts(20)), safe(fetch_trending_coins),
-      safe(() => fetch_polymarket(20)), safe(() => fetch_manifold(20)),
-      safe(() => fetch_insider_trades(20)), safe(() => fetch_breaches(15)),
+      safe(cf('dex-boost', () => fetch_dex_boosts(20), 60)),
+      safe(cf('cg-trending', fetch_trending_coins, 300)),
+      safe(cf('polymarket-20', () => fetch_polymarket(20), 120)),
+      safe(cf('manifold-20', () => fetch_manifold(20), 300)),
+      safe(cf('sec-insider', () => fetch_insider_trades(20), 600)),
+      safe(cf('hibp', () => fetch_breaches(15), 3600)),
     ]);
     set(W.dex, dx.value); set(W.coins, co.value);
     set(W.poly2, po.value); set(W.manifold2, ma.value);
@@ -400,10 +422,13 @@ async function loadPageData() {
   }
   else if (p === 2) {
     const [gh, ax, nm, py, s2, hn, lo] = await Promise.allSettled([
-      safe(() => fetch_github_trending(20)), safe(() => fetch_arxiv('cs.AI', 20)),
-      safe(fetch_npm), safe(fetch_pypi),
-      safe(() => fetch_s2_papers('large language model', 15)),
-      safe(() => fetch_hn(20)), safe(() => fetch_lobsters(20)),
+      safe(cf('github-trend', () => fetch_github_trending(20), 600)),
+      safe(cf('arxiv-ai', () => fetch_arxiv('cs.AI', 20), 900)),
+      safe(cf('npm-dl', fetch_npm, 3600)),
+      safe(cf('pypi-dl', fetch_pypi, 3600)),
+      safe(cf('s2-llm', () => fetch_s2_papers('large language model', 15), 900)),
+      safe(cf('hn', () => fetch_hn(20), 120)),
+      safe(cf('lobsters', () => fetch_lobsters(20), 120)),
     ]);
     set(W.github, gh.value); set(W.arxiv, ax.value);
     set(W.npm, nm.value); set(W.pypi, py.value); set(W.s2, s2.value);
@@ -416,9 +441,12 @@ async function loadPageData() {
   }
   else if (p === 3) {
     const [wk, ct, us, wb, oo, eq] = await Promise.allSettled([
-      safe(fetch_wiki_top), safe(() => fetch_crtsh('openai.com', 20)),
-      safe(() => fetch_usaspending(15)), safe(() => fetch_wayback('openai.com', 20)),
-      safe(() => fetch_ooni(15)), safe(fetch_earthquakes),
+      safe(cf('wiki-top', fetch_wiki_top, 600)),
+      safe(cf('crtsh-openai', () => fetch_crtsh('openai.com', 20), 3600)),
+      safe(cf('usaspend', () => fetch_usaspending(15), 3600)),
+      safe(cf('wayback-openai', () => fetch_wayback('openai.com', 20), 3600)),
+      safe(cf('ooni', () => fetch_ooni(15), 1800)),
+      safe(cf('quakes', fetch_earthquakes, 300)),
     ]);
     set(W.wiki2, wk.value); set(W.crtsh, ct.value);
     set(W.usa, us.value); set(W.wayback, wb.value);
@@ -431,10 +459,12 @@ async function loadPageData() {
   }
   else if (p === 4) {
     const [ins, co, br, tr, r1, r2] = await Promise.allSettled([
-      safe(() => fetch_insider_trades(20)), safe(() => fetch_congress(15)),
-      safe(() => fetch_breaches(15)), safe(fetch_google_trends),
-      safe(() => fetch_reddit('technology', 20)),
-      safe(() => fetch_reddit('cryptocurrency', 20)),
+      safe(cf('sec-insider', () => fetch_insider_trades(20), 600)),
+      safe(cf('congress', () => fetch_congress(15), 1800)),
+      safe(cf('hibp', () => fetch_breaches(15), 3600)),
+      safe(cf('g-trends', fetch_google_trends, 300)),
+      safe(cf('reddit-tech', () => fetch_reddit('technology', 20), 120)),
+      safe(cf('reddit-crypto', () => fetch_reddit('cryptocurrency', 20), 120)),
     ]);
     set(W.insider2, ins.value); set(W.congress2, co.value);
     set(W.breaches2, br.value); set(W.trends2, tr.value);
@@ -445,8 +475,44 @@ async function loadPageData() {
     if (tr.value?.[0]) tickerItems.push(`${I.search}TRENDING: ${tr.value[0][1]}`);
     setTicker(tickerItems);
   }
+  else if (p === 5) {
+    updateStatus(`{yellow-fg}${I.bolt}COMPUTING ALL INDICES…{/}`);
+    screen.render();
+    const [vb, dg, cl, dm, mc, tp] = await Promise.allSettled([
+      safe(cf('idx-vibes', computeVibesIndex, 120)),
+      safe(cf('idx-degen', computeDegenIndex, 120)),
+      safe(cf('idx-clown', computeClownIndex, 120)),
+      safe(cf('idx-doom', computeDoomIndex, 120)),
+      safe(cf('idx-mainchar', computeMainCharIndex, 120)),
+      safe(cf('idx-techpanic', computeTechPanicIndex, 120)),
+    ]);
 
-  updateStatus(`{green-fg}${I.dot} LIVE{/} {gray-fg}${new Date().toLocaleTimeString()}{/}`);
+    const log = W.breakdownLog;
+    const indices = [
+      { r: vb, w: W.vibesG, icon: I.fire, color: 'yellow', name: 'SO COOKED/SO BACK' },
+      { r: dg, w: W.degenG, icon: I.bolt, color: 'magenta', name: 'DEGEN INDEX' },
+      { r: cl, w: W.clownG, icon: I.rocket, color: 'cyan', name: 'CLOWN MARKET' },
+      { r: dm, w: W.doomG, icon: I.skull, color: 'red', name: 'DOOM SCROLL' },
+      { r: mc, w: W.maincharG, icon: I.eye, color: 'green', name: 'MAIN CHARACTER' },
+      { r: tp, w: W.techpanicG, icon: I.brain, color: 'blue', name: 'TECH BRO PANIC' },
+    ];
+
+    const tickerItems = [];
+    for (const { r, w, icon, name } of indices) {
+      if (r.value?.index != null) {
+        w?.setPercent(r.value.index);
+        w?.setLabel(` ${icon}${r.value.label}: ${r.value.index}/100 `);
+        log?.log(`{bold}${icon}${name}{/bold}: ${r.value.index}/100 — ${r.value.label}`);
+        r.value.breakdown?.forEach(b => log?.log(`  ${b}`));
+        log?.log('');
+        tickerItems.push(`${icon}${name}: ${r.value.index} ${r.value.label}`);
+      }
+    }
+    setTicker(tickerItems);
+  }
+
+  const stats = cacheStats();
+  updateStatus(`{green-fg}${I.dot} LIVE{/} {gray-fg}${new Date().toLocaleTimeString()}{/} {gray-fg}│{/} {cyan-fg}cache: ${stats.keys} keys{/}`);
   screen.render();
 }
 
@@ -466,6 +532,7 @@ screen.key(['2'], () => showPage(1));
 screen.key(['3'], () => showPage(2));
 screen.key(['4'], () => showPage(3));
 screen.key(['5'], () => showPage(4));
+screen.key(['6'], () => showPage(5));
 screen.key(['tab'], () => showPage((currentPage + 1) % PAGE_NAMES.length));
 screen.key(['S-tab'], () => showPage((currentPage - 1 + PAGE_NAMES.length) % PAGE_NAMES.length));
 
