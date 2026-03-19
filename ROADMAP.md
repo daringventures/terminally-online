@@ -3,21 +3,33 @@
 ### Phase 1: Foundation
 - [x] Project scaffold (Vite + vanilla TS)
 - [x] Panel base class + CSS grid layout
-- [x] Theme system (dark-first)
+- [x] Theme system (dark-first, monospace)
 - [x] Dev server running
+- [x] Playwright smoke test suite (8 tests passing)
 
 ### Phase 2: Tier 1 Sources (no auth, highest signal)
-- [x] Hacker News panel (Firebase API — real-time, no auth)
-- [x] Reddit trending panel (.json hack — no auth)
-- [ ] RSS engine + VC/tech feed panels (a16z, Sequoia, TechCrunch, etc.)
-- [x] DexScreener panel (DEX token launches, no auth)
-- [x] CoinGecko trending panel (no auth)
-- [x] Fear & Greed Index widget (no auth, single number)
-- [x] Google Trends RSS panel (no auth)
-- [x] Wikipedia pageviews anomaly panel (no auth, sleeper signal)
-- [x] Polymarket prediction markets panel (no auth)
-- [x] Lobste.rs panel (no auth, eng-focused)
-- [ ] Bluesky Jetstream panel (WebSocket firehose, no auth)
+- [x] Hacker News panel (Firebase API)
+- [x] Reddit trending panel (.json hack)
+- [x] RSS engine + VC/tech/crypto feed panels (24 feeds across 3 panels)
+- [x] DexScreener panel (DEX boosted tokens)
+- [x] CoinGecko trending panel
+- [x] Fear & Greed Index gauge widget
+- [x] Google Trends RSS panel
+- [x] Wikipedia pageviews anomaly panel
+- [x] Polymarket prediction markets panel
+- [x] Manifold Markets predictions panel
+- [x] Lobste.rs panel
+- [x] Bluesky Jetstream WebSocket firehose
+
+### Phase 2.5: Tier 1.5 Sources (no auth, high value)
+- [x] GitHub trending (new repos by star velocity)
+- [x] Product Hunt RSS feed
+- [x] arXiv AI papers (cs.AI latest)
+- [x] npm weekly download leaderboard (24 packages)
+- [x] SEC EDGAR insider trading (Form 4 RSS)
+- [x] Congress.gov most-viewed bills
+- [x] USGS earthquakes M4.5+ (GeoJSON)
+- [x] HIBP data breaches (free endpoint)
 
 ### Phase 3: Seeder + Caching Infrastructure
 - [ ] Redis (Upstash) integration
@@ -30,12 +42,8 @@
 ### Phase 4: Tier 2 Sources (free key required)
 - [ ] Finnhub (WebSocket real-time market data)
 - [ ] FRED (macro indicators — yield curve, fed funds, money supply)
-- [ ] Polymarket (prediction market odds)
-- [ ] Manifold Markets (niche predictions)
-- [ ] SEC EDGAR (insider trading Form 4, IPO filings)
 - [ ] FMP Congress trading (what politicians are buying)
 - [ ] Cloudflare Radar (internet infrastructure, BGP anomalies)
-- [ ] GitHub trending (developer attention velocity)
 - [ ] GDELT (global news intelligence, sentiment)
 - [ ] Farcaster/Neynar (crypto-native social)
 
@@ -53,9 +61,8 @@
 - [ ] AISStream (ship tracking — global trade)
 - [ ] OONI (censorship detection)
 - [ ] Wayback Machine CDX (website change detection)
-- [ ] npm/PyPI download stats (developer adoption trends)
+- [ ] PyPI download stats
 - [ ] Semantic Scholar (citation velocity)
-- [ ] arXiv (AI/ML papers before anyone talks about them)
 
 ### Phase 7: Polish
 - [ ] Smart polling (exp backoff, viewport-conditional, tab-pause)
@@ -73,3 +80,12 @@
 - **API**: Plain TS types for v0 (no proto overhead), proto later if needed
 - **Desktop**: Web-first, PWA, Tauri later
 - **Repo**: Standalone at C:/dev/terminally-online
+- **Testing**: Playwright E2E smoke tests
+
+### Stats
+- **Panels**: 22 (20 unique components, RSS reused 3x)
+- **Services**: 20 data source integrations
+- **RSS feeds**: 24 curated sources
+- **Bundle**: 36 KB JS (9 KB gzipped) + 3 KB CSS
+- **Build**: 342ms
+- **Tests**: 8 Playwright smoke tests, all passing
