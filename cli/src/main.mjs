@@ -59,11 +59,57 @@ async function safe(fn) {
   catch (e) { return [[`{red-fg}ERR{/} ${(e.message || '').slice(0, 50)}`]]; }
 }
 
-// ── Data setter — stores raw data for selection + sets headers ─
+// ── Data setter — stores raw data + renders per-column colored rows ─
+// Per-column color map (metric columns get distinct colors from titles)
+const COL_COLORS = {
+  '#': 'gray', 'PTS': 'yellow', 'CMTS': 'cyan', 'AGE': 'gray',
+  'YES%': 'green', 'VOLUME': 'yellow', 'VALUE': 'yellow',
+  'METRIC': 'cyan', 'MAG': 'red', 'DETAIL': 'gray',
+};
+
 function set(widget, data) {
   if (!widget || !data) return;
-  widget._data = data; // store for Enter→detail
-  try { widget.setData({ headers: widget._colHeaders || [], data }); } catch {}
+  widget._data = data;
+
+  const headers = widget._colHeaders || [];
+  const widths = widget._colWidths || [];
+  const spacing = widget.options?.columnSpacing || 2;
+  const cellColor = widget._cellColor || 'green';
+
+  // If we have column metadata, build color-tagged rows ourselves
+  if (headers.length > 0 && widths.length > 0) {
+    const rows = data.map(row => {
+      let str = '';
+      for (let j = 0; j < Math.min(row.length, widths.length); j++) {
+        const cell = String(row[j] ?? '');
+        const w = widths[j] || 10;
+        const truncated = cell.length > w ? cell.slice(0, w - 1) + '…' : cell;
+        const padded = truncated + ' '.repeat(Math.max(0, w - truncated.length));
+        const color = COL_COLORS[headers[j]] || cellColor;
+        str += `{${color}-fg}${padded}{/}`;
+        if (j < row.length - 1) str += ' '.repeat(spacing);
+      }
+      return str;
+    });
+
+    // Build header string
+    let headerStr = '';
+    for (let j = 0; j < headers.length; j++) {
+      const w = widths[j] || 10;
+      headerStr += headers[j] + ' '.repeat(Math.max(0, w - headers[j].length));
+      if (j < headers.length - 1) headerStr += ' '.repeat(spacing);
+    }
+
+    try {
+      widget.setContent(headerStr);
+      widget.rows.setItems(rows);
+    } catch {
+      // Fallback to default
+      try { widget.setData({ headers, data }); } catch {}
+    }
+  } else {
+    try { widget.setData({ headers, data }); } catch {}
+  }
 }
 
 // ── Page context (passed to every page's load function) ─

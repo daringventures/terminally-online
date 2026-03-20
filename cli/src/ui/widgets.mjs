@@ -3,19 +3,36 @@ import { C } from './theme.mjs';
 
 // ── Column layouts: [widths, headers] ───────────────────
 // Widths are in chars. Headers tell you what each column IS.
+// Column layouts: widths in chars, matched to trunc() limits in services.
+// Title columns are wide — services now trunc to 80 chars with ellipsis.
 export const COL = {
-  feed5: { w: [3, 52, 7, 8, 4],  h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
-  feed3: { w: [3, 58, 10],       h: ['#', 'TITLE', 'METRIC'] },
-  feed4: { w: [3, 48, 8, 10],    h: ['#', 'TITLE', 'VALUE', 'DETAIL'] },
-  pred:  { w: [3, 46, 6, 12],    h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
-  wide2: { w: [3, 65],           h: ['#', 'TITLE'] },
-  kv3:   { w: [3, 36, 14],       h: ['#', 'NAME', 'VALUE'] },
-  geo:   { w: [6, 46, 5, 8],     h: ['MAG', 'LOCATION', 'AGE', 'DETAIL'] },
+  feed5: { w: [3, 70, 7, 8, 4],  h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
+  feed3: { w: [3, 72, 10],       h: ['#', 'TITLE', 'METRIC'] },
+  feed4: { w: [3, 60, 8, 10],    h: ['#', 'TITLE', 'VALUE', 'DETAIL'] },
+  pred:  { w: [3, 55, 6, 12],    h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
+  wide2: { w: [3, 80],           h: ['#', 'TITLE'] },
+  kv3:   { w: [3, 42, 14],       h: ['#', 'NAME', 'VALUE'] },
+  geo:   { w: [6, 55, 5, 8],     h: ['MAG', 'LOCATION', 'AGE', 'DETAIL'] },
 };
 
 // ── Interactive color-coded table ───────────────────────
 // Tables are navigable (up/down/j/k), selectable (Enter), and focusable (Tab).
 // Focused table gets yellow border. Selected row highlighted cyan.
+// Per-column color map: header name → color for that column's data.
+// Title/question stay the table's cellColor. Metrics get distinct colors.
+const COL_COLORS = {
+  '#':       'gray',
+  'PTS':     'yellow',
+  'CMTS':    'cyan',
+  'AGE':     'gray',
+  'YES%':    'green',
+  'VOLUME':  'yellow',
+  'VALUE':   'yellow',
+  'METRIC':  'cyan',
+  'MAG':     'red',
+  'DETAIL':  'gray',
+};
+
 export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor = 'green') {
   const widget = grid.set(row, col, rowSpan, colSpan, contrib.table, {
     label: ` ${label} `,
@@ -23,6 +40,7 @@ export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor =
     vi: true,
     interactive: true,
     mouse: true,
+    tags: true,
     selectedFg: 'black',
     selectedBg: 'cyan',
     columnSpacing: 2,
@@ -36,6 +54,8 @@ export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor =
     border: { type: 'line', fg: 'cyan' },
   });
   widget._colHeaders = colDef.h;
+  widget._colWidths = colDef.w;
+  widget._cellColor = cellColor;
   widget._data = [];
   widget._label = label;
 

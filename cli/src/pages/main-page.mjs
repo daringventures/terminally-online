@@ -9,11 +9,11 @@ import { fetch_wiki_top } from '../services/wikipedia.mjs';
 import { fetch_lobsters } from '../services/lobsters.mjs';
 import { computeVibesIndex, computeDegenIndex } from '../services/vibes-index.mjs';
 
-// Narrow columns for smaller panels
+// Narrower columns for 4-col-span panels (still wide enough to read)
 const NARROW = {
-  feed: { w: [3, 38, 6, 6, 3], h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
-  pred: { w: [3, 34, 5, 10],   h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
-  kv:   { w: [3, 28, 12],      h: ['#', 'NAME', 'VALUE'] },
+  feed: { w: [3, 50, 6, 6, 3], h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
+  pred: { w: [3, 45, 5, 10],   h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
+  kv:   { w: [3, 38, 14],      h: ['#', 'NAME', 'VALUE'] },
 };
 
 export function build(grid, W) {
