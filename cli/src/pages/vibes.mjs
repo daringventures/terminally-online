@@ -51,7 +51,6 @@ export async function load(W, ctx) {
     if (r.value?.index != null) {
       const val = r.value.index;
       w?.setPercent(val);
-      w?.setLabel(` ${icon} ${r.value.label}: ${val}/100 `);
       log?.log(`{bold}${icon}${name}{/bold}: ${val}/100 — ${r.value.label}`);
       r.value.breakdown?.forEach(b => log?.log(`  ${b}`));
       log?.log('');

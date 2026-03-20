@@ -64,18 +64,16 @@ export async function load(W, ctx) {
   set(W.wiki, wk.value);
   set(W.lobsters, lo.value); set(W.ph, ph.value); set(W.congress, co.value);
 
-  // Vibes index gauge
+  // Vibes index gauge — don't call setLabel (crashes contrib widgets)
   if (vibes.value?.index != null) {
     const v = vibes.value;
     W.vibes?.setPercent(v.index);
-    W.vibes?.setLabel(` ${I.fire} ${v.label}: ${v.index}/100 `);
     tsRecord('idx:vibes', v.index, v.label);
   }
   // Degen index gauge
   if (degen.value?.index != null) {
     const d = degen.value;
     W.degen?.setPercent(d.index);
-    W.degen?.setLabel(` ${I.bolt} ${d.label}: ${d.index}/100 `);
     tsRecord('idx:degen', d.index, d.label);
   }
 
