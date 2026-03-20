@@ -13,12 +13,18 @@ export const COL = {
   geo:   { w: [6, 46, 5, 8],     h: ['MAG', 'LOCATION', 'AGE', 'DETAIL'] },
 };
 
-// Color-coded table: cellColor differentiates domains
+// ── Interactive color-coded table ───────────────────────
+// Tables are navigable (up/down/j/k), selectable (Enter), and focusable (Tab).
+// Focused table gets yellow border. Selected row highlighted cyan.
 export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor = 'green') {
   const widget = grid.set(row, col, rowSpan, colSpan, contrib.table, {
     label: ` ${label} `,
-    keys: false,
-    interactive: false,
+    keys: true,
+    vi: true,
+    interactive: true,
+    mouse: true,
+    selectedFg: 'black',
+    selectedBg: 'cyan',
     columnSpacing: 2,
     columnWidth: colDef.w,
     style: {
@@ -30,12 +36,30 @@ export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor =
     border: { type: 'line', fg: 'cyan' },
   });
   widget._colHeaders = colDef.h;
+  widget._data = [];
+  widget._label = label;
+
+  // Focus/blur border highlighting
+  if (widget.rows) {
+    widget.rows.on('focus', () => {
+      widget.style.border.fg = 'yellow';
+      widget.setLabel(` {yellow-fg}{bold}${label}{/bold}{/yellow-fg} `);
+    });
+    widget.rows.on('blur', () => {
+      widget.style.border.fg = 'cyan';
+      widget.setLabel(` ${label} `);
+    });
+  }
+
   return widget;
 }
 
 export function logWidget(grid, row, col, rowSpan, colSpan, label) {
   return grid.set(row, col, rowSpan, colSpan, contrib.log, {
     label: ` ${label} `,
+    keys: true,
+    scrollable: true,
+    mouse: true,
     style: {
       border: { fg: 'cyan' },
       label: { fg: 'white', bold: true },

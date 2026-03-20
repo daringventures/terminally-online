@@ -5,6 +5,7 @@ import blessed from 'blessed';
 import { I } from './ui/theme.mjs';
 import { tickerBar, setTicker, startTickerAnimation } from './ui/ticker.mjs';
 import { statusBar, updateStatus } from './ui/statusbar.mjs';
+import { openDetail, closeDetail, isDetailOpen, buildDetailLines, openUrl } from './ui/detail.mjs';
 import { cachedFetch, cacheStats, tsRecord, tsSince } from './cache.mjs';
 
 // ── Page modules ────────────────────────────────────────
@@ -21,16 +22,16 @@ import * as pageGovNYC from './pages/gov-nyc.mjs';
 
 // ── Page registry ───────────────────────────────────────
 const PAGES = [
-  { name: `${I.globe}MAIN`,    mod: pageMain },
-  { name: `${I.coin}DEGEN`,   mod: pageMarkets },
-  { name: `${I.git}NERD`,     mod: pageDev },
-  { name: `${I.skull}CURSED`,  mod: pageWeird },
-  { name: `${I.eye}GLOWIE`,   mod: pageIntel },
-  { name: `${I.chart}VIBES`,   mod: pageVibes },
-  { name: `${I.rocket}SIGNALS`, mod: pageSignals },
-  { name: `${I.lock}THREAT`,  mod: pageThreat },
-  { name: `${I.fire}MEMES`,   mod: pageMemes },
-  { name: `${I.money}GOV/NYC`, mod: pageGovNYC },
+  { name: `${I.globe}MAIN`,    mod: pageMain,    cacheKeys: ['hn', 'reddit-wsb', 'g-trends', 'polymarket', 'manifold', 'wiki-top', 'lobsters', 'producthunt', 'congress'] },
+  { name: `${I.coin}DEGEN`,   mod: pageMarkets,  cacheKeys: ['dex-boost', 'cg-trending', 'polymarket-20', 'manifold-20', 'sec-insider', 'hibp'] },
+  { name: `${I.git}NERD`,     mod: pageDev,      cacheKeys: ['github-trend', 'arxiv-ai', 'npm-dl', 'pypi-dl', 's2-llm', 'hn', 'lobsters'] },
+  { name: `${I.skull}CURSED`,  mod: pageWeird,    cacheKeys: ['wiki-top', 'crtsh-openai', 'usaspend', 'wayback-openai', 'ooni', 'quakes'] },
+  { name: `${I.eye}GLOWIE`,   mod: pageIntel,    cacheKeys: ['sec-insider', 'congress', 'hibp', 'g-trends', 'reddit-tech', 'reddit-crypto'] },
+  { name: `${I.chart}VIBES`,   mod: pageVibes,    cacheKeys: ['idx-vibes', 'idx-degen', 'idx-clown', 'idx-doom', 'idx-mainchar', 'idx-techpanic'] },
+  { name: `${I.rocket}SIGNALS`, mod: pageSignals,  cacheKeys: ['iss', 'space-wx', 'nasa-neo', 'flights-nyc', 'caiso', 'airports', 'wx-alerts', 'quakes'] },
+  { name: `${I.lock}THREAT`,  mod: pageThreat,   cacheKeys: ['cisa-kev', 'nvd-cve', 'feodo-c2', 'phishing', 'outages', 'hibp'] },
+  { name: `${I.fire}MEMES`,   mod: pageMemes,    cacheKeys: ['reddit-memes', 'reddit-dankmemes', 'reddit-drama', 'reddit-aita', 'steam-top', 'imgflip', 'reddit-collapse'] },
+  { name: `${I.money}GOV/NYC`, mod: pageGovNYC,   cacheKeys: ['fed-reg', 'fda-recalls', 'cfpb', 'treasury', 'citibike', 'btc-mempool', 'eth-gas', 'nyc-311'] },
 ];
 
 // ── Screen ──────────────────────────────────────────────
@@ -58,20 +59,49 @@ async function safe(fn) {
   catch (e) { return [[`{red-fg}ERR{/} ${(e.message || '').slice(0, 50)}`]]; }
 }
 
+// ── Data setter — stores raw data for selection + sets headers ─
 function set(widget, data) {
   if (!widget || !data) return;
+  widget._data = data; // store for Enter→detail
   try { widget.setData({ headers: widget._colHeaders || [], data }); } catch {}
 }
 
 // ── Page context (passed to every page's load function) ─
-const ctx = { safe, cf, set, setTicker, tsRecord, tsSince, I };
+const ctx = { safe, cf, set, setTicker, tsRecord, tsSince, I, screen, openDetail, buildDetailLines, openUrl };
+
+// ── Wire select events on all interactive tables ────────
+function wireSelectHandlers() {
+  for (const [key, widget] of Object.entries(W)) {
+    if (!widget?.rows) continue;
+
+    widget.rows.removeAllListeners('select');
+    widget.rows.on('select', (_item, idx) => {
+      const row = widget._data?.[idx];
+      if (!row) return;
+
+      const headers = widget._colHeaders || [];
+      const cacheKey = PAGES[currentPage].cacheKeys?.[0]; // best guess
+      const lines = buildDetailLines(headers, row, { cacheKey });
+
+      const panel = openDetail(screen, widget._label || key, lines);
+
+      // If there's a URL-like thing in the row data, stash it for 'o' key
+      const urlCandidate = row.find?.(cell => typeof cell === 'string' && cell.startsWith('http'));
+      if (urlCandidate && panel) {
+        panel._url = urlCandidate;
+      }
+    });
+  }
+}
 
 // ── Page lifecycle ──────────────────────────────────────
 function clearScreen() {
+  closeDetail(screen);
   while (screen.children.length) screen.children[0].detach();
 }
 
 function showPage(idx) {
+  if (isDetailOpen()) { closeDetail(screen); return; } // close popup first
   currentPage = idx;
   clearScreen();
   for (const k of Object.keys(W)) delete W[k];
@@ -82,6 +112,11 @@ function showPage(idx) {
   screen.append(tickerBar);
   screen.append(statusBar);
   screen.render();
+
+  // Focus first interactive table
+  const first = Object.values(W).find(w => w?.rows);
+  if (first) first.focus();
+
   loadPageData();
 }
 
@@ -91,10 +126,13 @@ async function loadPageData() {
 
   await PAGES[currentPage].mod.load(W, ctx);
 
+  // Wire Enter→detail on all table widgets after data is loaded
+  wireSelectHandlers();
+
   const stats = cacheStats();
   updateStatus(
     screen,
-    `{green-fg}${I.dot} LIVE{/} {gray-fg}${new Date().toLocaleTimeString()}{/} {gray-fg}│{/} {cyan-fg}cache: ${stats.keys} keys{/}`,
+    `{green-fg}${I.dot} LIVE{/} {gray-fg}${new Date().toLocaleTimeString()}{/} {gray-fg}│{/} {cyan-fg}cache: ${stats.keys} keys, ${stats.historyRows} hist{/}`,
     names,
     currentPage
   );
@@ -110,17 +148,72 @@ screen.on('resize', () => {
 });
 
 // ── Keys ────────────────────────────────────────────────
-screen.key(['q', 'C-c'], () => process.exit(0));
-screen.key(['r'], () => loadPageData());
+screen.key(['q', 'C-c'], () => {
+  if (isDetailOpen()) { closeDetail(screen); return; }
+  process.exit(0);
+});
+screen.key(['escape'], () => {
+  if (isDetailOpen()) closeDetail(screen);
+});
+screen.key(['r'], () => {
+  if (!isDetailOpen()) loadPageData();
+});
+
+// Number keys 1-9,0 switch pages
 for (let i = 0; i < Math.min(PAGES.length, 9); i++) {
-  screen.key([String(i + 1)], () => showPage(i));
+  screen.key([String(i + 1)], () => { if (!isDetailOpen()) showPage(i); });
 }
-screen.key(['0'], () => showPage(9));
-screen.key(['tab'], () => showPage((currentPage + 1) % PAGES.length));
-screen.key(['S-tab'], () => showPage((currentPage - 1 + PAGES.length) % PAGES.length));
+screen.key(['0'], () => { if (!isDetailOpen()) showPage(9); });
+
+// Tab = focus next widget within page, ]/[ = next/prev page
+screen.key(['tab'], () => {
+  if (isDetailOpen()) return;
+  screen.focusNext();
+  screen.render();
+});
+screen.key(['S-tab'], () => {
+  if (isDetailOpen()) return;
+  screen.focusPrev();
+  screen.render();
+});
+screen.key([']'], () => { if (!isDetailOpen()) showPage((currentPage + 1) % PAGES.length); });
+screen.key(['['], () => { if (!isDetailOpen()) showPage((currentPage - 1 + PAGES.length) % PAGES.length); });
+
+// 'o' opens URL when in detail view (handled by detail.mjs)
+// 'h' shows help
+screen.key(['h', '?'], () => {
+  if (isDetailOpen()) return;
+  openDetail(screen, 'KEYBOARD SHORTCUTS', [
+    '{bold}{white-fg}TERMINALLY ONLINE — KEYBOARD REFERENCE{/}',
+    '',
+    '{cyan-fg}NAVIGATION{/}',
+    '  {yellow-fg}1-0{/}     Switch pages (1=MAIN, 2=DEGEN, ... 0=GOV/NYC)',
+    '  {yellow-fg}]{/}/{yellow-fg}[{/}     Next/prev page',
+    '  {yellow-fg}Tab{/}     Focus next panel',
+    '  {yellow-fg}S-Tab{/}   Focus prev panel',
+    '',
+    '{cyan-fg}WITHIN A PANEL{/}',
+    '  {yellow-fg}↑↓{/} / {yellow-fg}j/k{/}  Navigate rows',
+    '  {yellow-fg}Enter{/}   Open detail view for selected row',
+    '  {yellow-fg}g{/}/{yellow-fg}G{/}     Jump to top/bottom',
+    '',
+    '{cyan-fg}DETAIL VIEW{/}',
+    '  {yellow-fg}o{/}       Open URL in browser',
+    '  {yellow-fg}↑↓{/}     Scroll detail content',
+    '  {yellow-fg}q{/}/{yellow-fg}Esc{/}   Close detail view',
+    '',
+    '{cyan-fg}GLOBAL{/}',
+    '  {yellow-fg}r{/}       Refresh current page data',
+    '  {yellow-fg}h{/}/{yellow-fg}?{/}     Show this help',
+    '  {yellow-fg}q{/}       Quit',
+    '',
+    `{gray-fg}Cache: ~/.terminally-online/cache.db{/}`,
+    `{gray-fg}History: 30 days | Timeseries: 90 days{/}`,
+  ]);
+});
 
 // ── Auto-refresh ────────────────────────────────────────
-setInterval(() => loadPageData(), 120_000);
+setInterval(() => { if (!isDetailOpen()) loadPageData(); }, 120_000);
 
 // ── Boot ────────────────────────────────────────────────
 startTickerAnimation(screen);
