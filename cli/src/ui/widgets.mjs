@@ -39,15 +39,14 @@ export function tbl(grid, row, col, rowSpan, colSpan, label, colDef, cellColor =
   widget._data = [];
   widget._label = label;
 
-  // Focus/blur border highlighting
+  // Focus/blur border highlighting — only change border color, don't touch label
+  // (contrib.table's internal label box doesn't support blessed tags)
   if (widget.rows) {
     widget.rows.on('focus', () => {
       widget.style.border.fg = 'yellow';
-      widget.setLabel(` {yellow-fg}{bold}${label}{/bold}{/yellow-fg} `);
     });
     widget.rows.on('blur', () => {
       widget.style.border.fg = 'cyan';
-      widget.setLabel(` ${label} `);
     });
   }
 
