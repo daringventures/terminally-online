@@ -33,9 +33,9 @@ export async function load(W, ctx) {
     safe(cf('wx-alerts', fetch_weather_alerts, 120)),
     safe(cf('quakes', fetch_earthquakes, 300)),
   ]);
-  set(W.iss, iss.value); set(W.spaceWx, sw.value); set(W.neo, neo.value);
-  set(W.flights, fl.value); set(W.powerGrid, pg.value); set(W.airports, ap.value);
-  set(W.wxAlerts, wx.value); set(W.quakes3, eq.value);
+  set(W.iss, iss.value, 'iss'); set(W.spaceWx, sw.value, 'space-wx'); set(W.neo, neo.value, 'nasa-neo');
+  set(W.flights, fl.value, 'flights-nyc'); set(W.powerGrid, pg.value, 'caiso'); set(W.airports, ap.value, 'airports');
+  set(W.wxAlerts, wx.value, 'wx-alerts'); set(W.quakes3, eq.value, 'quakes');
 
   const tickerItems = [];
   if (iss.value?.[0]) tickerItems.push(`${I.rocket}ISS: ${iss.value[0][2]}`);

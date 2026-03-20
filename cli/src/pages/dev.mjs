@@ -37,9 +37,9 @@ export async function load(W, ctx) {
     safe(cf('lobsters', () => fetch_lobsters(20), 120)),
   ]);
 
-  set(W.github, gh.value); set(W.arxiv, ax.value);
-  set(W.npm, nm.value); set(W.pypi, py.value); set(W.s2, s2.value);
-  set(W.hn2, hn.value); set(W.lobsters2, lo.value);
+  set(W.github, gh.value, 'github-trend'); set(W.arxiv, ax.value, 'arxiv-ai');
+  set(W.npm, nm.value, 'npm-dl'); set(W.pypi, py.value, 'pypi-dl'); set(W.s2, s2.value, 's2-llm');
+  set(W.hn2, hn.value, 'hn'); set(W.lobsters2, lo.value, 'lobsters');
 
   const tickerItems = [];
   if (gh.value?.[0]) tickerItems.push(`${I.git}RISING: ${gh.value[0][1]} ${gh.value[0][3]}`);

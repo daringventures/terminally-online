@@ -6,7 +6,7 @@ import { I } from './ui/theme.mjs';
 import { createTickerBar, getTickerBar, setTicker, startTickerAnimation } from './ui/ticker.mjs';
 import { createStatusBar, getStatusBar, updateStatus } from './ui/statusbar.mjs';
 import { openDetail, closeDetail, isDetailOpen, buildDetailLines, openUrl } from './ui/detail.mjs';
-import { cachedFetch, cacheStats, tsRecord, tsSince } from './cache.mjs';
+import { cachedFetch, cacheStats, tsRecord, tsSince, cacheAge } from './cache.mjs';
 
 // ── Page modules ────────────────────────────────────────
 import * as pageMain from './pages/main-page.mjs';
@@ -67,9 +67,21 @@ const COL_COLORS = {
   'METRIC': 'cyan', 'MAG': 'red', 'DETAIL': 'gray',
 };
 
-function set(widget, data) {
+function set(widget, data, cacheKey) {
   if (!widget || !data) return;
   widget._data = data;
+  widget._cacheKey = cacheKey || widget._cacheKey;
+
+  // Stamp the label with "updated Xs ago" if we have a cache key
+  if (widget._cacheKey && widget._label) {
+    const age = cacheAge(widget._cacheKey);
+    try {
+      widget.setLabel(` ${widget._label} {gray-fg}${age} ago{/} `);
+    } catch {
+      // contrib widgets may not support tagged labels — fallback
+      try { widget.setLabel(` ${widget._label} ${age} ago `); } catch {}
+    }
+  }
 
   const headers = widget._colHeaders || [];
   const widths = widget._colWidths || [];
@@ -113,7 +125,7 @@ function set(widget, data) {
 }
 
 // ── Page context (passed to every page's load function) ─
-const ctx = { safe, cf, set, setTicker, tsRecord, tsSince, I, screen, openDetail, buildDetailLines, openUrl };
+const ctx = { safe, cf, set, setTicker, tsRecord, tsSince, cacheAge, I, screen, openDetail, buildDetailLines, openUrl };
 
 // ── Wire select events on all interactive tables ────────
 function wireSelectHandlers() {

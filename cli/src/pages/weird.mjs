@@ -34,9 +34,9 @@ export async function load(W, ctx) {
     safe(cf('quakes', fetch_earthquakes, 300)),
   ]);
 
-  set(W.wiki2, wk.value); set(W.crtsh, ct.value);
-  set(W.usa, us.value); set(W.wayback, wb.value);
-  set(W.ooni, oo.value); set(W.quakes2, eq.value);
+  set(W.wiki2, wk.value, 'wiki-top'); set(W.crtsh, ct.value, 'crtsh-openai');
+  set(W.usa, us.value, 'usaspend'); set(W.wayback, wb.value, 'wayback-openai');
+  set(W.ooni, oo.value, 'ooni'); set(W.quakes2, eq.value, 'quakes');
 
   const tickerItems = [];
   if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI #1: ${wk.value[0][1]} ${wk.value[0][2]} views`);

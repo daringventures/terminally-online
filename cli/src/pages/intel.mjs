@@ -34,9 +34,9 @@ export async function load(W, ctx) {
     safe(cf('reddit-crypto', () => fetch_reddit('cryptocurrency', 20), 120)),
   ]);
 
-  set(W.insider2, ins.value); set(W.congress2, co.value);
-  set(W.breaches2, br.value); set(W.trends2, tr.value);
-  set(W.reddit2, r1.value); set(W.reddit3, r2.value);
+  set(W.insider2, ins.value, 'sec-insider'); set(W.congress2, co.value, 'congress');
+  set(W.breaches2, br.value, 'hibp'); set(W.trends2, tr.value, 'g-trends');
+  set(W.reddit2, r1.value, 'reddit-tech'); set(W.reddit3, r2.value, 'reddit-crypto');
 
   const tickerItems = [];
   if (ins.value?.[0]) tickerItems.push(`${I.money}INSIDER: ${ins.value[0][1]}`);

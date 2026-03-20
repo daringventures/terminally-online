@@ -68,12 +68,12 @@ export async function load(W, ctx) {
     safe(cf('idx-degen', computeDegenIndex, 120)),
   ]);
 
-  // ── Tables ──
-  set(W.hn, hn.value);
-  set(W.reddit, rd.value);
-  set(W.trends, tr.value);
-  set(W.poly, po.value);
-  set(W.lobsters, lo.value);
+  // ── Tables (3rd arg = cache key for "updated X ago" label) ──
+  set(W.hn, hn.value, 'hn');
+  set(W.reddit, rd.value, 'reddit-wsb');
+  set(W.trends, tr.value, 'g-trends');
+  set(W.poly, po.value, 'polymarket');
+  set(W.lobsters, lo.value, 'lobsters');
 
   // ── Vibes gauge + sparkline ──
   const log = W.signalLog;

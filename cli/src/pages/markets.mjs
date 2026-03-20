@@ -34,9 +34,9 @@ export async function load(W, ctx) {
     safe(cf('hibp', () => fetch_breaches(15), 3600)),
   ]);
 
-  set(W.dex, dx.value); set(W.coins, co.value);
-  set(W.poly2, po.value); set(W.manifold2, ma.value);
-  set(W.insider, ins.value); set(W.breaches, br.value);
+  set(W.dex, dx.value, 'dex-boost'); set(W.coins, co.value, 'cg-trending');
+  set(W.poly2, po.value, 'polymarket-20'); set(W.manifold2, ma.value, 'manifold-20');
+  set(W.insider, ins.value, 'sec-insider'); set(W.breaches, br.value, 'hibp');
 
   const tickerItems = [];
   if (co.value?.[0]) tickerItems.push(`${I.coin}#1 COIN: ${co.value[0][1]} ${co.value[0][4]}`);

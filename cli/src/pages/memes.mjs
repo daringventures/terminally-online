@@ -26,9 +26,9 @@ export async function load(W, ctx) {
     safe(cf('imgflip', () => fetch_meme_templates(15), 3600)),
     safe(cf('reddit-collapse', () => fetch_reddit('collapse', 15), 600)),
   ]);
-  set(W.memes, me.value); set(W.dankmemes, dk.value);
-  set(W.drama, dr.value); set(W.aita, ai.value);
-  set(W.steam, st.value); set(W.templates, tpl.value); set(W.collapse, cl.value);
+  set(W.memes, me.value, 'reddit-memes'); set(W.dankmemes, dk.value, 'reddit-dankmemes');
+  set(W.drama, dr.value, 'reddit-drama'); set(W.aita, ai.value, 'reddit-aita');
+  set(W.steam, st.value, 'steam-top'); set(W.templates, tpl.value, 'imgflip'); set(W.collapse, cl.value, 'reddit-collapse');
 
   const tickerItems = [];
   if (me.value?.[0]) tickerItems.push(`${I.fire}MEME: ${me.value[0][1]} (${me.value[0][2]}pts)`);

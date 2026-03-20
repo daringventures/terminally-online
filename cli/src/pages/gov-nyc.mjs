@@ -33,10 +33,10 @@ export async function load(W, ctx) {
     safe(cf('eth-gas', fetch_eth_gas, 30)),
     safe(cf('nyc-311', () => fetch_nyc_311(15), 300)),
   ]);
-  set(W.fedReg, fr.value); set(W.fda, fda.value);
-  set(W.cfpb, cfp.value); set(W.treasury, tr.value);
-  set(W.citi, cb.value); set(W.mempool, mp.value);
-  set(W.gas, gas.value); set(W.nyc311, n3.value);
+  set(W.fedReg, fr.value, 'fed-reg'); set(W.fda, fda.value, 'fda-recalls');
+  set(W.cfpb, cfp.value, 'cfpb'); set(W.treasury, tr.value, 'treasury');
+  set(W.citi, cb.value, 'citibike'); set(W.mempool, mp.value, 'btc-mempool');
+  set(W.gas, gas.value, 'eth-gas'); set(W.nyc311, n3.value, 'nyc-311');
 
   // Record timeseries for graphable data
   if (gas.value?.[1]) { const gwei = parseFloat(gas.value[1]?.[1]); if (!isNaN(gwei)) tsRecord('eth:gas-avg', gwei, 'gwei'); }

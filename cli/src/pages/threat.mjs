@@ -26,9 +26,9 @@ export async function load(W, ctx) {
     safe(cf('outages', fetch_internet_outages, 300)),
     safe(cf('hibp', () => fetch_breaches(15), 3600)),
   ]);
-  set(W.kev, kev.value); set(W.cves, cve.value);
-  set(W.c2, c2.value); set(W.phish, ph.value);
-  set(W.outages, out.value); set(W.breaches3, br.value);
+  set(W.kev, kev.value, 'cisa-kev'); set(W.cves, cve.value, 'nvd-cve');
+  set(W.c2, c2.value, 'feodo-c2'); set(W.phish, ph.value, 'phishing');
+  set(W.outages, out.value, 'outages'); set(W.breaches3, br.value, 'hibp');
 
   const tickerItems = [];
   if (kev.value?.[0]) tickerItems.push(`${I.lock}KEV: ${kev.value[0][0]} ${kev.value[0][1]}`);

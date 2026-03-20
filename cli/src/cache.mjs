@@ -164,6 +164,20 @@ export function tsPrune(maxAgeDays = 90) {
   stmtTsPrune.run(cutoff);
 }
 
+/**
+ * Get the age of a cache entry as a human-readable string.
+ * Returns '3s', '2m', '1h', etc. or '—' if not cached.
+ */
+export function cacheAge(key) {
+  const row = stmtGet.get(key);
+  if (!row) return '—';
+  const age = Math.floor(Date.now() / 1000) - row.fetched_at;
+  if (age < 60) return `${age}s`;
+  if (age < 3600) return `${Math.floor(age / 60)}m`;
+  if (age < 86400) return `${Math.floor(age / 3600)}h`;
+  return `${Math.floor(age / 86400)}d`;
+}
+
 export function closeDb() {
   db.close();
 }
