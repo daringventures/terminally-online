@@ -37,6 +37,7 @@ export function fmtNum(n) {
   if (typeof n !== 'number' || isNaN(n)) return String(n);
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return n.toLocaleString('en-US');
+  if (n >= 10_000) return `${(n / 1e3).toFixed(1)}K`;
+  if (n >= 1_000) return n.toLocaleString('en-US');
   return String(n);
 }
