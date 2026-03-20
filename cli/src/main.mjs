@@ -30,7 +30,7 @@ const PAGES = [
   { name: `${I.chart}VIBES`,   mod: pageVibes,    cacheKeys: ['idx-vibes', 'idx-degen', 'idx-clown', 'idx-doom', 'idx-mainchar', 'idx-techpanic'] },
   { name: `${I.rocket}SIGNALS`, mod: pageSignals,  cacheKeys: ['iss', 'space-wx', 'nasa-neo', 'flights-nyc', 'caiso', 'airports', 'wx-alerts', 'quakes'] },
   { name: `${I.lock}THREAT`,  mod: pageThreat,   cacheKeys: ['cisa-kev', 'nvd-cve', 'feodo-c2', 'phishing', 'outages', 'hibp'] },
-  { name: `${I.fire}MEMES`,   mod: pageMemes,    cacheKeys: ['reddit-memes', 'reddit-dankmemes', 'reddit-drama', 'reddit-aita', 'steam-top', 'imgflip', 'reddit-collapse'] },
+  { name: `${I.fire}CULTURE`, mod: pageMemes,     cacheKeys: ['reddit-memes', 'reddit-dankmemes', 'reddit-drama', 'reddit-aita', 'podcasts-top', 'steam-top', 'reddit-collapse'] },
   { name: `${I.money}GOV/NYC`, mod: pageGovNYC,   cacheKeys: ['fed-reg', 'fda-recalls', 'cfpb', 'treasury', 'citibike', 'btc-mempool', 'eth-gas', 'nyc-311'] },
 ];
 
