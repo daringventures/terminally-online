@@ -526,8 +526,123 @@ async function testLcd() {
   screen.render();
 }
 
+async function testOdds() {
+  const grid = new contrib.grid({ rows: 12, cols: 12, screen, bottom: 1 });
+
+  // Odds board — uses a log widget with manually rendered probability bars
+  const odds = grid.set(0, 0, 12, 12, contrib.log, {
+    label: ' POLYMARKET — PREDICTION ODDS ',
+    tags: true,
+    keys: true,
+    mouse: true,
+    scrollable: true,
+    style: {
+      border: { fg: 'cyan' },
+      label: { fg: 'white', bold: true },
+      text: { fg: 'white' },
+    },
+    border: { type: 'line', fg: 'cyan' },
+    bufferLength: 100,
+  });
+
+  screen.append(status);
+  screen.render();
+
+  status.setContent(` {yellow-fg}Fetching Polymarket...{/}`);
+  screen.render();
+
+  const { fetch_polymarket } = await import('./services/polymarket.mjs');
+  const data = await fetch_polymarket(15);
+
+  // Render each prediction as a visual odds bar
+  const barWidth = 40;
+  odds.log('{white-fg}{bold} QUESTION                                        YES%     VOLUME{/}');
+  odds.log('{gray-fg}' + '─'.repeat(80) + '{/}');
+
+  for (const row of data) {
+    const title = String(row[1] || '').padEnd(48).slice(0, 48);
+    const pctStr = String(row[2] || '0%').replace('%', '');
+    const pct = parseInt(pctStr) || 0;
+    const vol = String(row[3] || '');
+
+    // Build the probability bar
+    const filled = Math.round((pct / 100) * barWidth);
+    const empty = barWidth - filled;
+
+    // Color based on probability
+    let barColor;
+    if (pct >= 70) barColor = 'green';
+    else if (pct >= 40) barColor = 'yellow';
+    else if (pct >= 20) barColor = 'cyan';
+    else barColor = 'red';
+
+    const bar = `{${barColor}-fg}${'█'.repeat(filled)}{/}{gray-fg}${'░'.repeat(empty)}{/}`;
+
+    odds.log(`{white-fg}${title}{/} {${barColor}-fg}{bold}${pctStr.padStart(3)}%{/} ${bar} {gray-fg}${vol}{/}`);
+  }
+
+  odds.log('');
+  odds.log('{gray-fg}' + '─'.repeat(80) + '{/}');
+  odds.log('{gray-fg}  Bars show probability. Green ≥70%, Yellow ≥40%, Cyan ≥20%, Red <20%{/}');
+
+  status.setContent(` {green-fg}${data.length} markets loaded{/} | {gray-fg}[q] quit [↑↓] scroll{/}`);
+  screen.render();
+}
+
+async function testWiki() {
+  const grid = new contrib.grid({ rows: 12, cols: 12, screen, bottom: 1 });
+
+  // Wiki spikes as horizontal bar chart
+  const { fetch_wiki_top } = await import('./services/wikipedia.mjs');
+
+  const bar = grid.set(0, 0, 6, 12, contrib.bar, {
+    label: ' WIKIPEDIA — TOP VIEWED (views) ',
+    barWidth: 8,
+    barSpacing: 2,
+    xOffset: 0,
+    maxHeight: 9,
+    style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
+    border: { type: 'line', fg: 'cyan' },
+  });
+
+  const table = grid.set(6, 0, 6, 12, contrib.table, {
+    label: ' SOURCE DATA ',
+    keys: true,
+    interactive: true,
+    tags: true,
+    columnSpacing: 2,
+    columnWidth: [3, 50, 14],
+    style: {
+      header: { fg: 'white', bold: true },
+      cell: { fg: 'white' },
+      border: { fg: 'cyan' },
+      label: { fg: 'white', bold: true },
+    },
+    border: { type: 'line', fg: 'cyan' },
+  });
+
+  screen.append(status);
+  screen.render();
+
+  status.setContent(` {yellow-fg}Fetching Wikipedia...{/}`);
+  screen.render();
+
+  const data = await fetch_wiki_top();
+  const top10 = data.slice(0, 10);
+
+  const titles = top10.map(r => (r[1] || '?').slice(0, 8));
+  const views = top10.map(r => parseInt(String(r[2] || '0').replace(/[^0-9]/g, '')) || 0);
+
+  bar.setData({ titles, data: views });
+  table.setData({ headers: ['#', 'ARTICLE', 'VIEWS'], data: top10 });
+  table.focus();
+
+  status.setContent(` {green-fg}Wiki bar chart + table{/} | {gray-fg}[q] quit{/}`);
+  screen.render();
+}
+
 // ── Run selected test ──
-const tests = { table: testTable, gauge: testGauge, sparkline: testSparkline, donut: testDonut, log: testLog, bar: testBar, lcd: testLcd };
+const tests = { table: testTable, gauge: testGauge, sparkline: testSparkline, donut: testDonut, log: testLog, bar: testBar, lcd: testLcd, odds: testOdds, wiki: testWiki };
 const fn = tests[widgetName];
 if (!fn) {
   console.error(`Unknown widget: ${widgetName}. Available: ${Object.keys(tests).join(', ')}`);
