@@ -3,8 +3,8 @@ import contrib from 'blessed-contrib';
 import blessed from 'blessed';
 
 import { I } from './ui/theme.mjs';
-import { tickerBar, setTicker, startTickerAnimation } from './ui/ticker.mjs';
-import { statusBar, updateStatus } from './ui/statusbar.mjs';
+import { createTickerBar, getTickerBar, setTicker, startTickerAnimation } from './ui/ticker.mjs';
+import { createStatusBar, getStatusBar, updateStatus } from './ui/statusbar.mjs';
 import { openDetail, closeDetail, isDetailOpen, buildDetailLines, openUrl } from './ui/detail.mjs';
 import { cachedFetch, cacheStats, tsRecord, tsSince } from './cache.mjs';
 
@@ -109,8 +109,8 @@ function showPage(idx) {
   grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
   PAGES[idx].mod.build(grid, W);
 
-  screen.append(tickerBar);
-  screen.append(statusBar);
+  screen.append(getTickerBar());
+  screen.append(getStatusBar());
   screen.render();
 
   // Focus first interactive table
@@ -216,5 +216,7 @@ screen.key(['h', '?'], () => {
 setInterval(() => { if (!isDetailOpen()) loadPageData(); }, 120_000);
 
 // ── Boot ────────────────────────────────────────────────
+createTickerBar();
+createStatusBar();
 startTickerAnimation(screen);
 showPage(0);
