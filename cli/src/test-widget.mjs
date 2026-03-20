@@ -145,22 +145,16 @@ async function testGauge() {
     border: { type: 'line', fg: 'cyan' },
   });
 
-  // ── Option C: ASCII bars in a log (middle) ──
-  const barLog = grid.set(3, 0, 5, 12, contrib.log, {
-    label: ' INDICES AS ASCII BARS ',
+  // ── Option C: ASCII bar styles showcase ──
+  const barLog = grid.set(3, 0, 9, 12, contrib.log, {
+    label: ' BAR STYLE OPTIONS ',
     tags: true,
+    keys: true,
+    mouse: true,
+    scrollable: true,
     style: { border: { fg: 'yellow' }, label: { fg: 'white', bold: true }, text: { fg: 'white' } },
     border: { type: 'line', fg: 'yellow' },
-    bufferLength: 40,
-  });
-
-  // ── Comparison notes ──
-  const notes = grid.set(8, 0, 4, 12, contrib.log, {
-    label: ' SIGNAL BREAKDOWN ',
-    tags: true,
-    style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true }, text: { fg: 'green' } },
-    border: { type: 'line', fg: 'cyan' },
-    bufferLength: 30,
+    bufferLength: 120,
   });
 
   screen.append(status);
@@ -176,7 +170,7 @@ async function testGauge() {
   lcd1.setDisplay(String(vibes.index).padStart(3, ' '));
   lcd2.setDisplay(String(degen.index).padStart(3, ' '));
 
-  // Option B: Stacked gauge (fills the whole width with colored segments)
+  // Option B: Stacked gauge
   sg1.setStack([
     { percent: vibes.index, stroke: 'yellow' },
     { percent: 100 - vibes.index, stroke: 'black' },
@@ -186,35 +180,106 @@ async function testGauge() {
     { percent: 100 - degen.index, stroke: 'black' },
   ]);
 
-  // Option C: ASCII bars (the best one)
-  const barWidth = 50;
-  function renderBar(name, value, label, color) {
-    const filled = Math.round((value / 100) * barWidth);
-    const empty = barWidth - filled;
-    const bar = `{${color}-fg}${'█'.repeat(filled)}{/}{gray-fg}${'░'.repeat(empty)}{/}`;
-    barLog.log(`  {white-fg}{bold}${name.padEnd(12)}{/} ${bar} {${color}-fg}{bold}${String(value).padStart(3)}{/}/100  {white-fg}${label}{/}`);
+  // Option C: ALL THE BAR STYLES
+  const W = 40;
+  const v = vibes.index;
+  const d = degen.index;
+
+  function bar(filled, empty, fillChar, emptyChar, color) {
+    const f = Math.round((filled / 100) * W);
+    const e = W - f;
+    return `{${color}-fg}${fillChar.repeat(f)}{/}{gray-fg}${emptyChar.repeat(e)}{/}`;
   }
 
+  barLog.log('{white-fg}{bold}  VIBES = ' + v + '/100 (' + vibes.label + '), DEGEN = ' + d + '/100 (' + degen.label + '){/}');
+  barLog.log('{gray-fg}  ────────────────────────────────────────────────────────────────────{/}');
   barLog.log('');
-  renderBar('VIBES', vibes.index, vibes.label,
-    vibes.index <= 30 ? 'red' : vibes.index <= 60 ? 'yellow' : 'green');
-  barLog.log('');
-  renderBar('DEGEN', degen.index, degen.label,
-    degen.index >= 70 ? 'magenta' : degen.index >= 40 ? 'yellow' : 'green');
-  barLog.log('');
-  barLog.log('{gray-fg}  ─────────────────────────────────────────────────────────────────{/}');
-  barLog.log('{gray-fg}  Option A (top-left): LCD — big 7-segment numbers{/}');
-  barLog.log('{gray-fg}  Option B (top-right): Stacked gauge — fills width{/}');
-  barLog.log('{gray-fg}  Option C (this): ASCII bars — most readable, shows label inline{/}');
 
-  // Breakdown
-  notes.log(`{yellow-fg}{bold}VIBES: ${vibes.index}/100 — ${vibes.label}{/}`);
-  vibes.breakdown?.forEach(b => notes.log(`  {gray-fg}${b}{/}`));
-  notes.log('');
-  notes.log(`{magenta-fg}{bold}DEGEN: ${degen.index}/100 — ${degen.label}{/}`);
-  degen.breakdown?.forEach(b => notes.log(`  {gray-fg}${b}{/}`));
+  // Style 1: █ and ░
+  barLog.log('{white-fg}{bold}  STYLE 1: █ + ░{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '█', '░', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '█', '░', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
 
-  status.setContent(` {green-fg}VIBES: ${vibes.index} | DEGEN: ${degen.index}{/} | {gray-fg}A=LCD  B=Stacked  C=ASCII bars  [q] quit{/}`);
+  // Style 2: █ and ─
+  barLog.log('{white-fg}{bold}  STYLE 2: █ + ─{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '█', '─', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '█', '─', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 3: ━ and ╌
+  barLog.log('{white-fg}{bold}  STYLE 3: ━ + ╌{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '━', '╌', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '━', '╌', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 4: ■ and □
+  barLog.log('{white-fg}{bold}  STYLE 4: ■ + □{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '■', '□', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '■', '□', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 5: ▰ and ▱
+  barLog.log('{white-fg}{bold}  STYLE 5: ▰ + ▱{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '▰', '▱', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '▰', '▱', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 6: ▓ and ░
+  barLog.log('{white-fg}{bold}  STYLE 6: ▓ + ░{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '▓', '░', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '▓', '░', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 7: █ and · (dot)
+  barLog.log('{white-fg}{bold}  STYLE 7: █ + ·{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '█', '·', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '█', '·', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 8: █ and   (space — just the filled part, no empty)
+  barLog.log('{white-fg}{bold}  STYLE 8: █ + (space){/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '█', ' ', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '█', ' ', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 9: braille ⣿ and ⣀
+  barLog.log('{white-fg}{bold}  STYLE 9: ⣿ + ⣀{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '⣿', '⣀', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '⣿', '⣀', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 10: ● and ○
+  barLog.log('{white-fg}{bold}  STYLE 10: ● + ○{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '●', '○', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '●', '○', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 11: gradient █▓▒░
+  barLog.log('{white-fg}{bold}  STYLE 11: gradient fade █▓▒░{/}');
+  function gradBar(pct, color) {
+    const total = W;
+    const f = Math.round((pct / 100) * total);
+    const edge = Math.min(3, f);
+    const solid = Math.max(0, f - edge);
+    const fade = '▓'.repeat(Math.min(1, edge)) + '▒'.repeat(Math.min(1, Math.max(0, edge-1))) + '░'.repeat(Math.min(1, Math.max(0, edge-2)));
+    const empty = total - f;
+    return `{${color}-fg}${'█'.repeat(solid)}${fade}{/}{gray-fg}${' '.repeat(empty)}{/}`;
+  }
+  barLog.log(`  VIBES  ${gradBar(v, 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${gradBar(d, 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  // Style 12: pipe | and .
+  barLog.log('{white-fg}{bold}  STYLE 12: | + .{/}');
+  barLog.log(`  VIBES  ${bar(v, 100-v, '|', '.', 'yellow')}  {yellow-fg}${v}{/}`);
+  barLog.log(`  DEGEN  ${bar(d, 100-d, '|', '.', 'magenta')}  {magenta-fg}${d}{/}`);
+  barLog.log('');
+
+  barLog.log('{gray-fg}  ────────────────────────────────────────────────────────────────────{/}');
+  barLog.log('{gray-fg}  Scroll up/down to see all 12 styles. Pick the one with best contrast.{/}');
+
+  status.setContent(` {green-fg}VIBES: ${v} | DEGEN: ${d}{/} | {gray-fg}12 bar styles — scroll ↑↓ — [q] quit{/}`);
   screen.render();
 }
 
