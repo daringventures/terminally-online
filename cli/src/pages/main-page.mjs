@@ -1,5 +1,5 @@
-import { tbl, gaugeWidget, logWidget } from '../ui/widgets.mjs';
-import { I, C } from '../ui/theme.mjs';
+import { tbl, logWidget, COL } from '../ui/widgets.mjs';
+import { I } from '../ui/theme.mjs';
 import { fetch_hn } from '../services/hacker-news.mjs';
 import { fetch_reddit } from '../services/reddit.mjs';
 import { fetch_google_trends } from '../services/google-trends.mjs';
@@ -11,91 +11,84 @@ import { fetch_producthunt } from '../services/producthunt.mjs';
 import { fetch_congress } from '../services/congress.mjs';
 import { computeVibesIndex, computeDegenIndex } from '../services/vibes-index.mjs';
 
-const COL = {
-  feed5: { w: [3, 52, 7, 8, 4],  h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
-  feed3: { w: [3, 58, 10],       h: ['#', 'TITLE', 'METRIC'] },
-  pred:  { w: [3, 46, 6, 12],    h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
-  wide2: { w: [3, 65],           h: ['#', 'TITLE'] },
-  kv3:   { w: [3, 36, 14],       h: ['#', 'NAME', 'VALUE'] },
-  geo:   { w: [6, 46, 5, 8],     h: ['MAG', 'LOCATION', 'AGE', 'DETAIL'] },
+// Narrow column defs for 4-col-span panels (~60 chars wide)
+const NARROW = {
+  feed:  { w: [3, 38, 6, 6, 3], h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
+  pred:  { w: [3, 34, 5, 10],   h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
+  kv:    { w: [3, 28, 12],      h: ['#', 'NAME', 'VALUE'] },
+  geo:   { w: [5, 34, 4, 6],    h: ['MAG', 'LOCATION', 'AGE', 'DETAIL'] },
+  wide:  { w: [3, 50],          h: ['#', 'TITLE'] },
 };
 
 export function build(grid, W) {
-  // Row 0-2: Gauges across the top — BIG and visible
-  W.vibes = gaugeWidget(grid, 0, 0, 3, 3, `${I.fire} SO COOKED / SO BACK`, 'yellow');
-  W.degen = gaugeWidget(grid, 0, 3, 3, 3, `${I.bolt} DEGEN INDEX`, 'magenta');
-  W.hn = tbl(grid, 0, 6, 3, 6, `${I.hn} HACKER NEWS`, COL.feed5, 'green');
+  // Row 0-3: Top signals — full width HN + trends sidebar
+  W.hn       = tbl(grid, 0, 0, 4, 8, `${I.hn} HACKER NEWS`, COL.feed5, 'green');
+  W.trends   = tbl(grid, 0, 8, 4, 4, `${I.search} GOOGLE TRENDS`, NARROW.kv, 'cyan');
 
-  // Row 3-6: Main feeds
-  W.reddit = tbl(grid, 3, 0, 3, 4, `${I.reddit} r/WALLSTREETBETS`, COL.feed5, 'yellow');
-  W.trends = tbl(grid, 3, 4, 3, 4, `${I.search} GOOGLE TRENDS`, COL.feed3, 'cyan');
-  W.wiki = tbl(grid, 3, 8, 3, 4, `${I.wiki} WIKI SPIKES`, COL.kv3, 'white');
+  // Row 4-7: Markets + culture
+  W.reddit   = tbl(grid, 4, 0, 4, 4, `${I.reddit} r/WALLSTREETBETS`, NARROW.feed, 'yellow');
+  W.poly     = tbl(grid, 4, 4, 4, 4, `${I.chart} POLYMARKET`, NARROW.pred, 'cyan');
+  W.wiki     = tbl(grid, 4, 8, 4, 4, `${I.wiki} WIKI SPIKES`, NARROW.kv, 'white');
 
-  // Row 6-9: Prediction markets + Lobsters
-  W.poly = tbl(grid, 6, 0, 3, 4, `${I.chart} POLYMARKET`, COL.pred, 'cyan');
-  W.manifold = tbl(grid, 6, 4, 3, 4, `${I.brain} MANIFOLD`, COL.pred, 'magenta');
-  W.lobsters = tbl(grid, 6, 8, 3, 4, `${I.trophy} LOBSTE.RS`, COL.feed5, 'green');
-
-  // Row 9-12: Bottom row
-  W.ph = tbl(grid, 9, 0, 3, 4, `${I.rocket} PRODUCT HUNT`, COL.wide2, 'yellow');
-  W.congress = tbl(grid, 9, 4, 3, 4, `${I.gov} CONGRESS`, COL.geo, 'red');
-  W.breakdownLog = logWidget(grid, 9, 8, 3, 4, `${I.chart} SIGNAL BREAKDOWN`);
+  // Row 8-11: Dev + gov + vibes breakdown
+  W.lobsters = tbl(grid, 8, 0, 4, 4, `${I.trophy} LOBSTE.RS`, NARROW.feed, 'green');
+  W.ph       = tbl(grid, 8, 4, 4, 4, `${I.rocket} PRODUCT HUNT`, NARROW.wide, 'yellow');
+  W.vibesLog = logWidget(grid, 8, 8, 4, 4, `${I.chart} VIBES INDEX`);
 }
 
 export async function load(W, ctx) {
   const { safe, cf, set, setTicker, tsRecord } = ctx;
 
-  const [hn, rd, tr, po, ma, wk, lo, ph, co, vibes, degen] = await Promise.allSettled([
+  const [hn, rd, tr, po, wk, lo, ph, vibes, degen] = await Promise.allSettled([
     safe(cf('hn', () => fetch_hn(25), 120)),
     safe(cf('reddit-wsb', () => fetch_reddit('wallstreetbets', 20), 120)),
     safe(cf('g-trends', fetch_google_trends, 300)),
     safe(cf('polymarket', () => fetch_polymarket(15), 120)),
-    safe(cf('manifold', () => fetch_manifold(15), 300)),
     safe(cf('wiki-top', fetch_wiki_top, 600)),
     safe(cf('lobsters', () => fetch_lobsters(20), 120)),
     safe(cf('producthunt', () => fetch_producthunt(15), 600)),
-    safe(cf('congress', () => fetch_congress(15), 1800)),
     safe(cf('idx-vibes', computeVibesIndex, 120)),
     safe(cf('idx-degen', computeDegenIndex, 120)),
   ]);
 
-  set(W.hn, hn.value); set(W.reddit, rd.value); set(W.trends, tr.value);
-  set(W.poly, po.value); set(W.manifold, ma.value);
+  set(W.hn, hn.value);
+  set(W.reddit, rd.value);
+  set(W.trends, tr.value);
+  set(W.poly, po.value);
   set(W.wiki, wk.value);
-  set(W.lobsters, lo.value); set(W.ph, ph.value); set(W.congress, co.value);
+  set(W.lobsters, lo.value);
+  set(W.ph, ph.value);
 
-  // Vibes index gauge — don't call setLabel (crashes contrib widgets)
+  // Vibes log — show index values as styled text (way more readable than gauges)
+  const log = W.vibesLog;
   if (vibes.value?.index != null) {
     const v = vibes.value;
-    W.vibes?.setPercent(v.index);
+    const bar = '█'.repeat(Math.floor(v.index / 5)) + '░'.repeat(20 - Math.floor(v.index / 5));
+    const color = v.index <= 30 ? 'red' : v.index <= 60 ? 'yellow' : 'green';
+    log?.log(`{${color}-fg}{bold}VIBES ${v.index}/100{/bold}{/}`);
+    log?.log(`{${color}-fg}${bar}{/}`);
+    log?.log(`{white-fg}${v.label}{/}`);
+    v.breakdown?.forEach(b => log?.log(`{gray-fg}  ${b}{/}`));
     tsRecord('idx:vibes', v.index, v.label);
   }
-  // Degen index gauge
   if (degen.value?.index != null) {
     const d = degen.value;
-    W.degen?.setPercent(d.index);
+    const bar = '█'.repeat(Math.floor(d.index / 5)) + '░'.repeat(20 - Math.floor(d.index / 5));
+    const color = d.index >= 70 ? 'magenta' : d.index >= 40 ? 'yellow' : 'green';
+    log?.log(`{${color}-fg}{bold}DEGEN ${d.index}/100{/bold}{/}`);
+    log?.log(`{${color}-fg}${bar}{/}`);
+    log?.log(`{white-fg}${d.label}{/}`);
+    d.breakdown?.forEach(b => log?.log(`{gray-fg}  ${b}{/}`));
     tsRecord('idx:degen', d.index, d.label);
   }
 
-  // Push breakdowns into log widget
-  const log = W.breakdownLog;
-  if (vibes.value) {
-    log?.log(`{bold}{yellow-fg}${I.fire}VIBES: ${vibes.value.index}/100 — ${vibes.value.label}{/}`);
-    vibes.value.breakdown?.forEach(b => log?.log(`  ${b}`));
-  }
-  if (degen.value) {
-    log?.log(`{bold}{magenta-fg}${I.bolt}DEGEN: ${degen.value.index}/100 — ${degen.value.label}{/}`);
-    degen.value.breakdown?.forEach(b => log?.log(`  ${b}`));
-  }
-
-  // Update ticker with live data
+  // Ticker
   const tickerItems = [];
-  if (vibes.value) tickerItems.push(`${I.fire}VIBES: ${vibes.value.index}/100 ${vibes.value.label}`);
-  if (degen.value) tickerItems.push(`${I.bolt}DEGEN: ${degen.value.index}/100 ${degen.value.label}`);
+  if (vibes.value) tickerItems.push(`VIBES: ${vibes.value.index}/100 ${vibes.value.label}`);
+  if (degen.value) tickerItems.push(`DEGEN: ${degen.value.index}/100 ${degen.value.label}`);
   if (vibes.value?.breakdown) vibes.value.breakdown.forEach(b => tickerItems.push(b));
-  if (hn.value?.[0]) tickerItems.push(`${I.hn}HN #1: ${hn.value[0][1]}`);
-  if (tr.value?.[0]) tickerItems.push(`${I.search}TRENDING: ${tr.value[0][1]}`);
-  if (po.value?.[0]) tickerItems.push(`${I.chart}POLY: ${po.value[0][1]} ${po.value[0][2]}`);
-  if (wk.value?.[0]) tickerItems.push(`${I.wiki}WIKI: ${wk.value[0][1]} (${wk.value[0][2]})`);
+  if (hn.value?.[0]) tickerItems.push(`HN #1: ${hn.value[0][1]}`);
+  if (tr.value?.[0]) tickerItems.push(`TRENDING: ${tr.value[0][1]}`);
+  if (po.value?.[0]) tickerItems.push(`POLY: ${po.value[0][1]} ${po.value[0][2]}`);
   setTicker(tickerItems);
 }

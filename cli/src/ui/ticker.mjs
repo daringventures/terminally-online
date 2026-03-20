@@ -8,7 +8,7 @@ let tickerOffset = 0;
 
 export function createTickerBar() {
   tickerBar = blessed.box({
-    top: 0, left: 0, width: '100%', height: 1,
+    top: 0, left: 0, width: '100%', height: 2,
     tags: true,
     style: { fg: 'yellow', bg: 'black' },
   });

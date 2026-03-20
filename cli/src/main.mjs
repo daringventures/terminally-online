@@ -106,7 +106,7 @@ function showPage(idx) {
   clearScreen();
   for (const k of Object.keys(W)) delete W[k];
 
-  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 1, bottom: 1 });
+  grid = new contrib.grid({ rows: 12, cols: 12, screen, top: 2, bottom: 1 });
   PAGES[idx].mod.build(grid, W);
 
   screen.append(getTickerBar());
