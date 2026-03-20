@@ -63,7 +63,7 @@ async function safe(fn) {
 // Per-column color map (metric columns get distinct colors from titles)
 const COL_COLORS = {
   '#': 'gray', 'PTS': 'yellow', 'CMTS': 'cyan', 'AGE': 'gray',
-  'YES%': 'green', 'VOLUME': 'yellow', 'VALUE': 'yellow',
+  'ODDS': 'green', 'VOLUME': 'yellow', 'VALUE': 'yellow',
   'METRIC': 'cyan', 'MAG': 'red', 'DETAIL': 'gray',
 };
 

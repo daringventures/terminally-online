@@ -10,7 +10,7 @@ import { fetch_breaches } from '../services/hibp.mjs';
 const COL = {
   feed5: { w: [3, 52, 7, 8, 4],  h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
   feed4: { w: [3, 48, 8, 10],    h: ['#', 'TITLE', 'VALUE', 'DETAIL'] },
-  pred:  { w: [3, 46, 6, 12],    h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
+  pred:  { w: [3, 46, 6, 12],    h: ['#', 'QUESTION', 'ODDS', 'VOLUME'] },
 };
 
 export function build(grid, W) {

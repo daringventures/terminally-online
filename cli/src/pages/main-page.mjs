@@ -12,7 +12,7 @@ import { computeVibesIndex, computeDegenIndex } from '../services/vibes-index.mj
 // Narrower columns for 4-col-span panels (still wide enough to read)
 const NARROW = {
   feed: { w: [3, 50, 6, 6, 3], h: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'] },
-  pred: { w: [3, 45, 5, 10],   h: ['#', 'QUESTION', 'YES%', 'VOLUME'] },
+  pred: { w: [3, 45, 5, 10],   h: ['#', 'QUESTION', 'ODDS', 'VOLUME'] },
   kv:   { w: [3, 38, 14],      h: ['#', 'NAME', 'VALUE'] },
 };
 
