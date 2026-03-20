@@ -113,53 +113,54 @@ async function testTable() {
 async function testGauge() {
   const grid = new contrib.grid({ rows: 12, cols: 12, screen, bottom: 1 });
 
-  // Test different gauge sizes to find what looks good
-  const g1 = grid.set(0, 0, 6, 6, contrib.gauge, {
-    label: ' VIBES: SO COOKED / SO BACK ',
-    stroke: 'yellow',
-    fill: 'white',
+  // ── Option A: LCD big number (top left) ──
+  const lcd1 = grid.set(0, 0, 3, 3, contrib.lcd, {
+    label: ' VIBES (LCD) ',
+    segmentWidth: 0.06, segmentInterval: 0.11, strokeWidth: 0.11,
+    elements: 3, display: '---', elementSpacing: 4, elementPadding: 2,
+    color: 'yellow',
     style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
     border: { type: 'line', fg: 'cyan' },
   });
 
-  const g2 = grid.set(0, 6, 6, 6, contrib.gauge, {
-    label: ' DEGEN INDEX ',
-    stroke: 'magenta',
-    fill: 'white',
+  const lcd2 = grid.set(0, 3, 3, 3, contrib.lcd, {
+    label: ' DEGEN (LCD) ',
+    segmentWidth: 0.06, segmentInterval: 0.11, strokeWidth: 0.11,
+    elements: 3, display: '---', elementSpacing: 4, elementPadding: 2,
+    color: 'magenta',
     style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
     border: { type: 'line', fg: 'cyan' },
   });
 
-  const g3 = grid.set(6, 0, 3, 4, contrib.gauge, {
-    label: ' SMALL (3x4) ',
-    stroke: 'green',
-    fill: 'white',
+  // ── Option B: Stacked gauge (top right) ──
+  const sg1 = grid.set(0, 6, 3, 3, contrib.gauge, {
+    label: ' VIBES (STACKED) ',
     style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
     border: { type: 'line', fg: 'cyan' },
   });
 
-  const g4 = grid.set(6, 4, 3, 4, contrib.gauge, {
-    label: ' SMALL (3x4) ',
-    stroke: 'red',
-    fill: 'white',
+  const sg2 = grid.set(0, 9, 3, 3, contrib.gauge, {
+    label: ' DEGEN (STACKED) ',
     style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
     border: { type: 'line', fg: 'cyan' },
   });
 
-  const g5 = grid.set(6, 8, 3, 4, contrib.gauge, {
-    label: ' SMALL (3x4) ',
-    stroke: 'cyan',
-    fill: 'white',
-    style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true } },
-    border: { type: 'line', fg: 'cyan' },
+  // ── Option C: ASCII bars in a log (middle) ──
+  const barLog = grid.set(3, 0, 5, 12, contrib.log, {
+    label: ' INDICES AS ASCII BARS ',
+    tags: true,
+    style: { border: { fg: 'yellow' }, label: { fg: 'white', bold: true }, text: { fg: 'white' } },
+    border: { type: 'line', fg: 'yellow' },
+    bufferLength: 40,
   });
 
-  const log = grid.set(9, 0, 3, 12, contrib.log, {
-    label: ' GAUGE SIZE COMPARISON ',
+  // ── Comparison notes ──
+  const notes = grid.set(8, 0, 4, 12, contrib.log, {
+    label: ' SIGNAL BREAKDOWN ',
     tags: true,
     style: { border: { fg: 'cyan' }, label: { fg: 'white', bold: true }, text: { fg: 'green' } },
     border: { type: 'line', fg: 'cyan' },
-    bufferLength: 20,
+    bufferLength: 30,
   });
 
   screen.append(status);
@@ -171,21 +172,49 @@ async function testGauge() {
   const vibes = await computeVibesIndex();
   const degen = await computeDegenIndex();
 
-  g1.setPercent(vibes.index);
-  g2.setPercent(degen.index);
-  g3.setPercent(42);
-  g4.setPercent(78);
-  g5.setPercent(15);
+  // Option A: LCD
+  lcd1.setDisplay(String(vibes.index).padStart(3, ' '));
+  lcd2.setDisplay(String(degen.index).padStart(3, ' '));
 
-  log.log(`{yellow-fg}{bold}VIBES: ${vibes.index}/100 — ${vibes.label}{/}`);
-  vibes.breakdown?.forEach(b => log.log(`  {gray-fg}${b}{/}`));
-  log.log(`{magenta-fg}{bold}DEGEN: ${degen.index}/100 — ${degen.label}{/}`);
-  degen.breakdown?.forEach(b => log.log(`  {gray-fg}${b}{/}`));
-  log.log('');
-  log.log('{white-fg}Top row: 6x6 (half screen). Bottom row: 3x4 (quarter screen).{/}');
-  log.log('{white-fg}Which size looks best for gauges?{/}');
+  // Option B: Stacked gauge (fills the whole width with colored segments)
+  sg1.setStack([
+    { percent: vibes.index, stroke: 'yellow' },
+    { percent: 100 - vibes.index, stroke: 'black' },
+  ]);
+  sg2.setStack([
+    { percent: degen.index, stroke: 'magenta' },
+    { percent: 100 - degen.index, stroke: 'black' },
+  ]);
 
-  status.setContent(` {green-fg}VIBES: ${vibes.index} | DEGEN: ${degen.index}{/} | {gray-fg}[q] quit{/}`);
+  // Option C: ASCII bars (the best one)
+  const barWidth = 50;
+  function renderBar(name, value, label, color) {
+    const filled = Math.round((value / 100) * barWidth);
+    const empty = barWidth - filled;
+    const bar = `{${color}-fg}${'█'.repeat(filled)}{/}{gray-fg}${'░'.repeat(empty)}{/}`;
+    barLog.log(`  {white-fg}{bold}${name.padEnd(12)}{/} ${bar} {${color}-fg}{bold}${String(value).padStart(3)}{/}/100  {white-fg}${label}{/}`);
+  }
+
+  barLog.log('');
+  renderBar('VIBES', vibes.index, vibes.label,
+    vibes.index <= 30 ? 'red' : vibes.index <= 60 ? 'yellow' : 'green');
+  barLog.log('');
+  renderBar('DEGEN', degen.index, degen.label,
+    degen.index >= 70 ? 'magenta' : degen.index >= 40 ? 'yellow' : 'green');
+  barLog.log('');
+  barLog.log('{gray-fg}  ─────────────────────────────────────────────────────────────────{/}');
+  barLog.log('{gray-fg}  Option A (top-left): LCD — big 7-segment numbers{/}');
+  barLog.log('{gray-fg}  Option B (top-right): Stacked gauge — fills width{/}');
+  barLog.log('{gray-fg}  Option C (this): ASCII bars — most readable, shows label inline{/}');
+
+  // Breakdown
+  notes.log(`{yellow-fg}{bold}VIBES: ${vibes.index}/100 — ${vibes.label}{/}`);
+  vibes.breakdown?.forEach(b => notes.log(`  {gray-fg}${b}{/}`));
+  notes.log('');
+  notes.log(`{magenta-fg}{bold}DEGEN: ${degen.index}/100 — ${degen.label}{/}`);
+  degen.breakdown?.forEach(b => notes.log(`  {gray-fg}${b}{/}`));
+
+  status.setContent(` {green-fg}VIBES: ${vibes.index} | DEGEN: ${degen.index}{/} | {gray-fg}A=LCD  B=Stacked  C=ASCII bars  [q] quit{/}`);
   screen.render();
 }
 
