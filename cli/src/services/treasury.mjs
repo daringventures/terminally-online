@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_treasury() {
   try {
@@ -8,7 +8,7 @@ export async function fetch_treasury() {
     const results = data?.data || [];
     if (results.length === 0) throw new Error('No data');
     return results.map(item => [
-      String(item.security_desc || item.security_type_desc || '').slice(0, 35),
+      trunc(String(item.security_desc || item.security_type_desc || ''), 80),
       String(item.avg_interest_rate_amt || item.interest_rate || ''),
       String(item.record_date || ''),
     ]);

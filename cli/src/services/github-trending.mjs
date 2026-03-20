@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 export async function fetch_github_trending(count = 20) {
   const since = new Date(); since.setDate(since.getDate() - 7);
@@ -8,7 +8,7 @@ export async function fetch_github_trending(count = 20) {
   );
   return data.items.map((r, i) => [
     String(i + 1),
-    r.full_name.slice(0, 40),
+    trunc(r.full_name, 80),
     r.language || '-',
     `★${fmtNum(r.stargazers_count)}`,
   ]);

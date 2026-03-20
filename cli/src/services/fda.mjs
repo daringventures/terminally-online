@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_fda_recalls(count = 10) {
   const data = await fetchJSON(
@@ -6,8 +6,8 @@ export async function fetch_fda_recalls(count = 10) {
   );
   return (data.results || []).map(item => [
     String(item.classification || ''),
-    String(item.reason_for_recall || '').slice(0, 45),
-    String(item.recalling_firm || '').slice(0, 20),
+    trunc(String(item.reason_for_recall || ''), 60),
+    trunc(String(item.recalling_firm || ''), 30),
     String(item.report_date || ''),
   ]);
 }
@@ -18,13 +18,12 @@ export async function fetch_fda_events(count = 10) {
   );
   return (data.results || []).map(item => {
     const drugs = item.patient?.drug || [];
-    const drugName = String(
+    const drugName = trunc(String(
       drugs[0]?.medicinalproduct || drugs[0]?.openfda?.brand_name?.[0] || 'Unknown'
-    ).slice(0, 20);
-    const reactions = (item.patient?.reaction || [])
+    ), 30);
+    const reactions = trunc((item.patient?.reaction || [])
       .map(r => String(r.reactionmeddrapt || ''))
-      .join(', ')
-      .slice(0, 40);
+      .join(', '), 60);
     const serious = item.serious === 1 ? 'YES' : 'no';
     const date = String(item.receiptdate || '');
     return [drugName, reactions, serious, date];

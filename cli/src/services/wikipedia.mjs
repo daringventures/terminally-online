@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 export async function fetch_wiki_top() {
   const d = new Date(); d.setDate(d.getDate() - 1);
@@ -21,7 +21,7 @@ export async function fetch_wiki_top() {
     .slice(0, 25)
     .map((a, i) => [
       String(i + 1),
-      a.article.replace(/_/g, ' ').slice(0, 45),
+      trunc(a.article.replace(/_/g, ' '), 80),
       fmtNum(a.views),
     ]);
 }

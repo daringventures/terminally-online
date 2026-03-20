@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 const KNOWN_NAMES = {
   730:     'CS2',
@@ -28,7 +28,7 @@ export async function fetch_steam_top(count = 15) {
   return data.response.ranks
     .slice(0, count)
     .map((r, i) => {
-      const name = (KNOWN_NAMES[r.appid] || `App ${r.appid}`).slice(0, 40);
+      const name = trunc(KNOWN_NAMES[r.appid] || `App ${r.appid}`, 80);
       return [
         String(i + 1),
         name,

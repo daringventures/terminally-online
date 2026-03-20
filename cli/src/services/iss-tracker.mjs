@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_iss() {
   const [pos, astros] = await Promise.all([
@@ -12,7 +12,7 @@ export async function fetch_iss() {
   const rows = [['ISS', 'Station', `${lat},${lng}`]];
 
   const people = (astros.people ?? []).map(p => [
-    p.name.slice(0, 55),
+    trunc(p.name, 80),
     p.craft,
     'aboard',
   ]);

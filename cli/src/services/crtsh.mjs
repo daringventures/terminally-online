@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 // Certificate Transparency — new certs for a domain
 export async function fetch_crtsh(domain = 'openai.com', count = 20) {
@@ -13,8 +13,8 @@ export async function fetch_crtsh(domain = 'openai.com', count = 20) {
     if (seen.has(cn)) continue;
     seen.add(cn);
     rows.push([
-      cn?.slice(0, 45) ?? '',
-      c.issuer_name?.split(',')[0]?.replace('O=', '').slice(0, 20) ?? '',
+      trunc(cn ?? '', 60),
+      trunc(c.issuer_name?.split(',')[0]?.replace('O=', '') ?? '', 30),
       c.entry_timestamp?.split('T')[0] ?? '',
     ]);
     if (rows.length >= count) break;

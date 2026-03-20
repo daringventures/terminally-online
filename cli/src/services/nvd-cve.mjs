@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 function severityLabel(score) {
   if (score === null || score === undefined) return 'N/A';
@@ -22,7 +22,7 @@ export async function fetch_recent_cves(count = 15) {
     // Pick first English description
     const descs = Array.isArray(cve.descriptions) ? cve.descriptions : [];
     const eng = descs.find(d => d.lang === 'en');
-    const desc = (eng?.value ?? '').slice(0, 45);
+    const desc = trunc(eng?.value ?? '', 60);
 
     // Extract CVSS score — prefer v3.1, fall back to v3.0 then v2
     const metrics = cve.metrics ?? {};

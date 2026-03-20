@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 export async function fetch_manifold(count = 20) {
   const markets = await fetchJSON(
@@ -6,7 +6,7 @@ export async function fetch_manifold(count = 20) {
   );
   return markets.map((m, i) => [
     String(i + 1),
-    m.question.slice(0, 50),
+    trunc(m.question, 80),
     `${((m.probability ?? 0) * 100).toFixed(0)}%`,
     `$${fmtNum(m.volume)}`,
   ]);

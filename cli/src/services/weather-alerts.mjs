@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 export async function fetch_weather_alerts() {
   const data = await fetchJSON(
@@ -9,9 +9,9 @@ export async function fetch_weather_alerts() {
 
   return features.map(f => {
     const p = f.properties ?? {};
-    const severity = (p.severity ?? 'Unknown').slice(0, 10);
-    const headline = (p.headline ?? p.event ?? 'N/A').slice(0, 50);
-    const area = (p.areaDesc ?? '').slice(0, 20);
+    const severity = trunc(p.severity ?? 'Unknown', 30);
+    const headline = trunc(p.headline ?? p.event ?? 'N/A', 80);
+    const area = trunc(p.areaDesc ?? '', 30);
     const sent = p.sent
       ? timeAgo(Math.floor(new Date(p.sent).getTime() / 1000))
       : '?';

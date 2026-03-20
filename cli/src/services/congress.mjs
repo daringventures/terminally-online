@@ -1,4 +1,4 @@
-import { fetchText } from '../fetch.mjs';
+import { fetchText, trunc } from '../fetch.mjs';
 
 export async function fetch_congress(count = 20) {
   const xml = await fetchText('https://www.congress.gov/rss/most-viewed-bills.xml');
@@ -11,7 +11,7 @@ export async function fetch_congress(count = 20) {
     const title = m[2].trim();
     return [
       bill,
-      title.slice(0, 50),
+      trunc(title, 80),
       bill.startsWith('S') ? 'Senate' : 'House',
     ];
   });

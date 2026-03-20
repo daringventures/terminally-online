@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 // Cloudflare Radar internet outage annotations
 export async function fetch_internet_outages() {
@@ -18,9 +18,9 @@ export async function fetch_internet_outages() {
 
     return annotations.map(a => {
       const eventType = String(a.eventType ?? a.type ?? 'outage');
-      const desc = (a.description ?? a.title ?? a.label ?? '').slice(0, 45);
+      const desc = trunc(a.description ?? a.title ?? a.label ?? '', 60);
       const locations = Array.isArray(a.locations)
-        ? a.locations.join(', ').slice(0, 20)
+        ? trunc(a.locations.join(', '), 30)
         : String(a.location ?? a.country ?? '');
       const ts = a.startDate ?? a.startTime ?? a.date ?? null;
       const ago = ts

@@ -1,4 +1,4 @@
-import { fetchJSON, fetchText, timeAgo } from '../fetch.mjs';
+import { fetchJSON, fetchText, timeAgo, trunc } from '../fetch.mjs';
 
 // Feodo Tracker C2 IP blocklist (abuse.ch)
 export async function fetch_feodo_c2(count = 15) {
@@ -36,6 +36,6 @@ export async function fetch_phishing(count = 15) {
       } catch {
         domain = url.split('/')[0] ?? '';
       }
-      return [String(i + 1), url.slice(0, 55), domain];
+      return [String(i + 1), trunc(url, 80), domain];
     });
 }

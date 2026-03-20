@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 export async function fetch_citibike() {
   const [statusData, infoData] = await Promise.all([
@@ -41,13 +41,13 @@ export async function fetch_citibike() {
   ];
 
   for (const s of busiest) {
-    rows.push([s.name.slice(0, 25), fmtNum(s.bikes), `${s.bikes} bikes`]);
+    rows.push([trunc(s.name, 30), fmtNum(s.bikes), `${s.bikes} bikes`]);
   }
 
   rows.push(['--- EMPTIEST ---', '', '']);
 
   for (const s of emptiest) {
-    rows.push([s.name.slice(0, 25), fmtNum(s.bikes), `${s.docks} docks free`]);
+    rows.push([trunc(s.name, 30), fmtNum(s.bikes), `${s.docks} docks free`]);
   }
 
   return rows;

@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_airport_delays() {
   const data = await fetchJSON(
@@ -21,7 +21,7 @@ export async function fetch_airport_delays() {
       const gdItems = Array.isArray(gd) ? gd : [gd];
       for (const g of gdItems) {
         const avg = g.Avg ?? g.avg ?? '?';
-        const reason = (g.Reason ?? g.reason ?? '').slice(0, 40);
+        const reason = trunc(g.Reason ?? g.reason ?? '', 60);
         rows.push([airport, 'Ground Delay', reason, String(avg)]);
       }
     }
@@ -32,16 +32,16 @@ export async function fetch_airport_delays() {
       const adItems = Array.isArray(ad) ? ad : [ad];
       for (const a of adItems) {
         const avg = a.Min ?? a.min ?? '?';
-        const reason = (a.Reason ?? a.reason ?? '').slice(0, 40);
+        const reason = trunc(a.Reason ?? a.reason ?? '', 60);
         const type = a.Type ?? a.type ?? 'Delay';
-        rows.push([airport, String(type).slice(0, 15), reason, String(avg)]);
+        rows.push([airport, trunc(String(type), 30), reason, String(avg)]);
       }
     }
 
     // Closures
     const cl = item.Closure;
     if (cl) {
-      const reason = (cl.Reason ?? cl.reason ?? '').slice(0, 40);
+      const reason = trunc(cl.Reason ?? cl.reason ?? '', 60);
       rows.push([airport, 'Closure', reason, '-']);
     }
   }

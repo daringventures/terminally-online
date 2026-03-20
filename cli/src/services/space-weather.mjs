@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 export async function fetch_space_weather() {
   const [alerts, wind] = await Promise.all([
@@ -14,8 +14,8 @@ export async function fetch_space_weather() {
     .map(a => {
       // message field is a long string; first line is usually the type
       const msg = (a.message ?? '').replace(/\r?\n/g, ' ').trim();
-      const type = (a.product ?? a.type ?? 'ALERT').slice(0, 20);
-      const desc = msg.slice(0, 55);
+      const type = trunc(a.product ?? a.type ?? 'ALERT', 30);
+      const desc = trunc(msg, 60);
       const issued = a.issue_datetime
         ? timeAgo(Math.floor(new Date(a.issue_datetime).getTime() / 1000))
         : '?';

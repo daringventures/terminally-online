@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_flights_nyc() {
   const data = await fetchJSON(
@@ -16,7 +16,7 @@ export async function fetch_flights_nyc() {
     .slice(0, 15)
     .map(s => {
       const callsign = (s[1] ?? '').trim() || (s[0] ?? '?');
-      const country = (s[2] ?? 'Unknown').slice(0, 20);
+      const country = trunc(s[2] ?? 'Unknown', 30);
       const altFt = s[7] != null ? Math.round(s[7] * 3.28084).toLocaleString() : '?';
       const knots = s[9] != null ? Math.round(s[9] * 1.94384).toString() : '?';
       const heading = s[10] != null ? `${Math.round(s[10])}°` : '?';

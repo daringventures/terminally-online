@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 // CISA Known Exploited Vulnerabilities catalog
 export async function fetch_cisa_kev(count = 15) {
@@ -11,7 +11,7 @@ export async function fetch_cisa_kev(count = 15) {
     .slice(0, count)
     .map(v => [
       String(v.cveID ?? ''),
-      (v.vulnerabilityName ?? '').slice(0, 40),
+      trunc(v.vulnerabilityName ?? '', 80),
       String(v.vendorProject ?? ''),
       String(v.dateAdded ?? ''),
     ]);

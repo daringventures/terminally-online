@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 export async function fetch_nyc_311(count = 20) {
   const data = await fetchJSON(
@@ -12,9 +12,9 @@ export async function fetch_nyc_311(count = 20) {
       if (!isNaN(ts)) ago = timeAgo(ts);
     }
     return [
-      String(item.complaint_type || '').slice(0, 15),
-      String(item.descriptor || '').slice(0, 35),
-      String(item.borough || '').slice(0, 13),
+      trunc(String(item.complaint_type || ''), 30),
+      trunc(String(item.descriptor || ''), 60),
+      trunc(String(item.borough || ''), 30),
       ago,
     ];
   });

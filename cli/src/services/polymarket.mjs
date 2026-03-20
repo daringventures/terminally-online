@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 export async function fetch_polymarket(count = 20) {
   const events = await fetchJSON(
@@ -12,7 +12,7 @@ export async function fetch_polymarket(count = 20) {
       try { pct = JSON.parse(m.outcomePrices)[0] ?? 0; } catch {}
       return [
         String(i + 1),
-        (e.title || m.question).slice(0, 50),
+        trunc(e.title || m.question, 80),
         `${(pct * 100).toFixed(0)}%`,
         `$${fmtNum(m.volume)}`,
       ];

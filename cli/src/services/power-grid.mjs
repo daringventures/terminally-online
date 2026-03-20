@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_caiso() {
   const data = await fetchJSON(
@@ -12,7 +12,7 @@ export async function fetch_caiso() {
   const total = sources.reduce((sum, s) => sum + (Number(s.mw ?? s.value ?? 0)), 0);
 
   return sources.map(s => {
-    const name = (s.fuelsource ?? s.source ?? s.name ?? 'Unknown').slice(0, 20);
+    const name = trunc(s.fuelsource ?? s.source ?? s.name ?? 'Unknown', 30);
     const mw = Number(s.mw ?? s.value ?? 0);
     const pct = total > 0
       ? `${((mw / total) * 100).toFixed(1)}%`

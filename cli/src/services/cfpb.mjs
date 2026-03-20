@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 export async function fetch_cfpb(count = 15) {
   const data = await fetchJSON(
@@ -14,9 +14,9 @@ export async function fetch_cfpb(count = 15) {
       if (!isNaN(ts)) ago = timeAgo(ts);
     }
     return [
-      String(s.product || '').slice(0, 15),
-      String(s.issue || '').slice(0, 35),
-      String(s.company || '').slice(0, 15),
+      trunc(String(s.product || ''), 30),
+      trunc(String(s.issue || ''), 60),
+      trunc(String(s.company || ''), 30),
       ago,
     ];
   });

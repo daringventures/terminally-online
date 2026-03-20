@@ -1,4 +1,4 @@
-import { fetchJSON, fmtNum } from '../fetch.mjs';
+import { fetchJSON, fmtNum, trunc } from '../fetch.mjs';
 
 // Semantic Scholar — trending AI papers by citation count
 export async function fetch_s2_papers(query = 'large language model', count = 15) {
@@ -7,7 +7,7 @@ export async function fetch_s2_papers(query = 'large language model', count = 15
   );
   return (data.data || []).map((p, i) => [
     String(i + 1),
-    (p.title || '').slice(0, 50),
+    trunc(p.title || '', 80),
     fmtNum(p.citationCount || 0) + ' cit',
     String(p.year || ''),
   ]);

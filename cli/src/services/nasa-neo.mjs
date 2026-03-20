@@ -1,4 +1,4 @@
-import { fetchJSON } from '../fetch.mjs';
+import { fetchJSON, trunc } from '../fetch.mjs';
 
 export async function fetch_neo() {
   const data = await fetchJSON(
@@ -18,7 +18,7 @@ export async function fetch_neo() {
       const velocity =
         parseFloat(approach.relative_velocity?.kilometers_per_hour ?? 0).toFixed(0);
       const hazard = neo.is_potentially_hazardous_asteroid ? 'YES' : 'no';
-      const name = (neo.name ?? '').replace(/[()]/g, '').trim().slice(0, 40);
+      const name = trunc((neo.name ?? '').replace(/[()]/g, '').trim(), 80);
       return { missMiles, row: [hazard, name, Math.round(missMiles).toLocaleString(), `${diamKm}km`, `${velocity}kph`] };
     })
     .sort((a, b) => a.missMiles - b.missMiles)

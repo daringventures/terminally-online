@@ -1,4 +1,4 @@
-import { fetchText } from '../fetch.mjs';
+import { fetchText, trunc } from '../fetch.mjs';
 
 export async function fetch_arxiv(cat = 'cs.AI', count = 20) {
   const xml = await fetchText(
@@ -12,8 +12,8 @@ export async function fetch_arxiv(cat = 'cs.AI', count = 20) {
     const date = entry.match(/<published>(.*?)<\/published>/)?.[1]?.split('T')[0] ?? '';
     papers.push([
       String(papers.length + 1),
-      title.slice(0, 55),
-      authors.slice(0, 2).join(', ').slice(0, 25) + (authors.length > 2 ? ' +' : ''),
+      trunc(title, 80),
+      trunc(authors.slice(0, 2).join(', '), 30) + (authors.length > 2 ? ' +' : ''),
       date,
     ]);
   }

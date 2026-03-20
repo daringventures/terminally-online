@@ -1,4 +1,4 @@
-import { fetchJSON, timeAgo } from '../fetch.mjs';
+import { fetchJSON, timeAgo, trunc } from '../fetch.mjs';
 
 export async function fetch_earthquakes() {
   const data = await fetchJSON(
@@ -6,7 +6,7 @@ export async function fetch_earthquakes() {
   );
   return data.features.map(f => [
     f.properties.mag.toFixed(1),
-    f.properties.place?.slice(0, 45) ?? '',
+    trunc(f.properties.place ?? '', 60),
     timeAgo(Math.floor(f.properties.time / 1000)),
     `${f.geometry.coordinates[2]?.toFixed(0) ?? '?'}km`,
   ]);

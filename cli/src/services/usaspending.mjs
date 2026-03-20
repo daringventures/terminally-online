@@ -1,4 +1,4 @@
-import { fmtNum } from '../fetch.mjs';
+import { fmtNum, trunc } from '../fetch.mjs';
 
 // USAspending — recent federal awards
 export async function fetch_usaspending(count = 15) {
@@ -21,9 +21,9 @@ export async function fetch_usaspending(count = 15) {
   const data = await res.json();
   return (data.results || []).map((r, i) => [
     String(i + 1),
-    (r['Recipient Name'] || '').slice(0, 30),
+    trunc(r['Recipient Name'] || '', 30),
     '$' + fmtNum(Math.abs(r['Award Amount'] || 0)),
-    (r['Awarding Agency'] || '').slice(0, 25),
+    trunc(r['Awarding Agency'] || '', 30),
   ]);
 }
 
