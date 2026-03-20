@@ -8,6 +8,6 @@ export async function fetch_manifold(count = 20) {
     String(i + 1),
     trunc(m.question, 80),
     `${((m.probability ?? 0) * 100).toFixed(0)}%`,
-    `$${fmtNum(m.volume)}`,
+    `$${fmtNum(Math.round(parseFloat(m.volume) || 0))}`,
   ]);
 }

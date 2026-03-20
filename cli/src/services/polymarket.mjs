@@ -14,7 +14,7 @@ export async function fetch_polymarket(count = 20) {
         String(i + 1),
         trunc(e.title || m.question, 80),
         `${(pct * 100).toFixed(0)}%`,
-        `$${fmtNum(m.volume)}`,
+        `$${fmtNum(Math.round(parseFloat(m.volume) || 0))}`,
       ];
     });
 }
