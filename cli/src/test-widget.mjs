@@ -7,10 +7,45 @@
  */
 import blessed from 'blessed';
 import contrib from 'blessed-contrib';
-import { cachedFetch, tsRecord, tsSince } from './cache.mjs';
+import { cachedFetch, tsRecord, tsSince, cacheAge } from './cache.mjs';
 import { fetch_hn } from './services/hacker-news.mjs';
 import { fetch_reddit } from './services/reddit.mjs';
 import { computeVibesIndex, computeDegenIndex } from './services/vibes-index.mjs';
+
+// ── Same per-column color rendering as main.mjs ──
+const COL_COLORS = {
+  '#': 'gray', 'PTS': 'yellow', 'CMTS': 'cyan', 'AGE': 'gray',
+  'YES%': 'green', 'VOLUME': 'yellow', 'VALUE': 'yellow',
+  'METRIC': 'cyan', 'MAG': 'red', 'DETAIL': 'gray',
+};
+
+function colorSet(widget, data, headers, widths, cellColor = 'green') {
+  if (!widget || !data) return;
+  const spacing = 2;
+  const rows = data.map(row => {
+    let str = '';
+    for (let j = 0; j < Math.min(row.length, widths.length); j++) {
+      const cell = String(row[j] ?? '');
+      const w = widths[j] || 10;
+      const truncated = cell.length > w ? cell.slice(0, w - 1) + '…' : cell;
+      const padded = truncated + ' '.repeat(Math.max(0, w - truncated.length));
+      const color = COL_COLORS[headers[j]] || cellColor;
+      str += `{${color}-fg}${padded}{/}`;
+      if (j < row.length - 1) str += ' '.repeat(spacing);
+    }
+    return str;
+  });
+
+  let headerStr = '';
+  for (let j = 0; j < headers.length; j++) {
+    const w = widths[j] || 10;
+    headerStr += headers[j] + ' '.repeat(Math.max(0, w - headers[j].length));
+    if (j < headers.length - 1) headerStr += ' '.repeat(spacing);
+  }
+
+  widget.setContent(headerStr);
+  widget.rows.setItems(rows);
+}
 
 const widgetName = process.argv[2] || 'table';
 
@@ -40,6 +75,7 @@ async function testTable() {
     vi: true,
     interactive: true,
     mouse: true,
+    tags: true,
     selectedFg: 'black',
     selectedBg: 'cyan',
     columnSpacing: 2,
@@ -60,8 +96,10 @@ async function testTable() {
   status.setContent(` {yellow-fg}Fetching HN...{/}`);
   screen.render();
 
+  const headers = ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'];
+  const widths = [3, 80, 8, 10, 5];
   const data = await fetch_hn(25);
-  table.setData({ headers: ['#', 'TITLE', 'PTS', 'CMTS', 'AGE'], data });
+  colorSet(table, data, headers, widths, 'green');
   status.setContent(` {green-fg}Loaded ${data.length} items{/} | {gray-fg}[q] quit [↑↓] navigate [Enter] select{/}`);
 
   table.rows.on('select', (_item, idx) => {
